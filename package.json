@@ -1,0 +1,36 @@
+{
+  "name": "blockcast",
+  "version": "0.0.0",
+  "description": "A protocol for publishing messages to the Bitcoin blockchain.",
+  "main": "./src/index.js",
+  "scripts": {
+    "test": "./node_modules/.bin/jasmine-node test/ --forceexit --verbose --captureExceptions",
+    "test-dev": "./node_modules/.bin/jasmine-node test/ --verbose --autotest --captureExceptions --color --watch src/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/williamcotton/blockcast.git"
+  },
+  "keywords": [
+    "bitcoin",
+    "blockchain",
+    "message",
+    "decentralized",
+    "social",
+    "crypto",
+    "cryptocurrency"
+  ],
+  "author": "William Cotton",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/williamcotton/blockcast/issues"
+  },
+  "homepage": "https://github.com/williamcotton/blockcast",
+  "devDependencies": {
+    "jasmine-node": "^1.14.5",
+    "helloblock-js": "^0.2.5"
+  },
+  "dependencies": {
+    "bitcoinjs-lib": "^1.2.0"
+  }
+}
