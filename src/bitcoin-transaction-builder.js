@@ -3,19 +3,17 @@ var assert = require("assert");
 var Bitcoin = require("bitcoinjs-lib");
 
 var dataPayload = require("./data-payload");
-var header = require("./header");
 
-var loadAndSignTransaction = function(options) {
+var loadAndSignTransaction = function(options, callback) {
   var tx = options.tx;
   var unspent = options.unspent;
   var address = options.address;
-  var privateKeyWIF = options.privateKeyWIF;
-  var key = Bitcoin.ECKey.fromWIF(privateKeyWIF);
   tx.addInput(unspent.txHash, unspent.index);
   tx.addOutput(address, unspent.value - 100);
-  tx.sign(0, key);
-  return tx;
-}
+  options.signTransaction(tx, function(err, signedTx) {
+    callback(false, signedTx);
+  });
+};
 
 var createTransactionWithPayload = function(payload) {
   var payloadScript = Bitcoin.Script.fromChunks([Bitcoin.opcodes.OP_RETURN, payload]);
@@ -43,133 +41,80 @@ var getPayloadFromTransactions = function(transactions) {
   return payloads;
 };
 
-var sortPayloads = function(unsortedPayloads) {
-  var firstPayload;
-  var theRest = [];
-  for (var i = 0; i < unsortedPayloads.length; i++) {
-    var pl = unsortedPayloads[i];
-    var startHeader = pl.slice(0,3);
-    try {
-      var info = header.decodeStart(startHeader);
-      if (info) {
-        firstPayload = pl;
-      }
-    }
-    catch (e) {
-      var midHeader = pl.slice(0,2);
-      var info = header.decodeMid(midHeader);
-      theRest[info.index-1] = pl;
-    }
-  };
-  return [firstPayload].concat(theRest);
-};
-
 var getData = function(transactions, callback) {
   var unsortedPayloads = getPayloadFromTransactions(transactions);
-  var payloads = sortPayloads(unsortedPayloads);
+  var payloads = dataPayload.sort(unsortedPayloads);
   dataPayload.decode(payloads, function(error, decodedData) {
     callback(error, decodedData)
   });
 };
 
-var createTransactions = function(options, callback) {
-  var transactions = [];
+var signFromPrivateKeyWIF = function(privateKeyWIF) {
+  return function(tx, callback) {
+    var key = Bitcoin.ECKey.fromWIF(privateKeyWIF);
+    tx.sign(0, key); 
+    callback(false, tx);
+  }
+};
+
+var createSignedTransactionsWithData = function(options, callback) {
+  var signTransaction = options.signTransaction || signFromPrivateKeyWIF(options.privateKeyWIF);
+  options.signTransaction = signTransaction;
   var data = options.data;
   var unspentOutputs = options.unspentOutputs;
+  var existingUnspent = unspentOutputs[0];
   var id = options.id;
   var address = options.address;
   var privateKeyWIF = options.privateKeyWIF;
   dataPayload.create({data: data, id: id}, function(err, payloads) {
-    for (var i = 0; i < payloads.length; i++) {
-      var unspent = unspentOutputs[i];
-      var payload = payloads[i];
-      var tx = createTransactionWithPayload(payload);
-      if (unspent) {
-        tx = loadAndSignTransaction({
-          tx: tx,
-          unspent: unspent,
-          address: address,
-          privateKeyWIF: privateKeyWIF
-        });
+
+    var signedTransactions = [];
+    var signedTransactionsCounter = 0;
+    var payloadsLength = payloads.length;
+
+    var signedTransactionResponse = function(err, signedTx) {
+      var signedTxBuilt = signedTx.build();
+      var signedTxHex = signedTxBuilt.toHex();
+      signedTransactions[signedTransactionsCounter] = signedTxHex;
+      signedTransactionsCounter++;
+      if (signedTransactionsCounter == payloadsLength) {
+        callback(false, signedTransactions);
       }
-      transactions.push(tx);
-    };
-    callback(false, transactions);
-  });
-};
-
-var createTransactionHexChain = function(options, callback) {
-  var allTransactions;
-  var afterPropagation = function(txIndex, txHash, callback) {
-    var tx = allTransactions[txIndex];
-    var prevTx = allTransactions[txIndex - 1];
-    var value = prevTx.tx.outs[1].value;
-    var index = 1;
-    var unspent = {
-      txHash: txHash,
-      index: index,
-      value: value
-    };
-    tx = loadAndSignTransaction({
-      tx: tx,
-      unspent: unspent,
-      address: options.address,
-      privateKeyWIF: options.privateKeyWIF
-    });
-    var builtTx = tx.build();
-    var hex = builtTx.toHex();
-    callback(false, hex);
-  };
-  if (options.unspentOutputs.length < 1) {
-    callback("no unspents", false);
-    return;
-  }
-  createTransactions(options, function(err, transactions) {
-    allTransactions = transactions;
-    var tx = transactions[0];
-    var builtTx = tx.build();
-    var txHex = builtTx.toHex();
-    callback(false, txHex, afterPropagation, transactions.length);
-  });
-};
-
-// or another way...
-var createTransactionHexList = function(options, callback) {
-  if (options.unspentOutputs.length < 1) {
-    callback("no unspents", false);
-    return;
-  }
-  createTransactions(options, function(err, transactions) {
-    var transactionHexList = [];
-    for (var i = 0; i < transactions.length; i++) {
-      var tx = transactions[i];
-      if (tx.tx.outs.length < 2) {
-        var prevTx = transactions[i-1];
-        var value = prevTx.tx.outs[1].value;
-        var prevTxHash = prevTx.build().getId();
+      else {
+        var payload = payloads[signedTransactionsCounter];
+        var tx = createTransactionWithPayload(payload);
+        var value = signedTx.tx.outs[1].value;
+        var signedTxHash = signedTxBuilt.getId();
         var index = 1;
+
         var unspent = {
-          txHash: prevTxHash,
+          txHash: signedTxHash,
           index: index,
           value: value
         };
-        tx = loadAndSignTransaction({
+
+        loadAndSignTransaction({
           tx: tx,
           unspent: unspent,
-          address: options.address,
-          privateKeyWIF: options.privateKeyWIF
-        });
+          address: address,
+          signTransaction: options.signTransaction
+        }, signedTransactionResponse);
       }
-      var builtTx = tx.build();
-      var hex = builtTx.toHex();
-      transactionHexList.push(hex);
     };
-    callback(false, transactionHexList);
+
+    var tx = createTransactionWithPayload(payloads[0]);
+
+    loadAndSignTransaction({
+      tx: tx,
+      unspent: existingUnspent,
+      address: address,
+      signTransaction: options.signTransaction
+    }, signedTransactionResponse);
+
   });
 };
 
 module.exports = {
-  createTransactionHexList: createTransactionHexList,
-  createTransactionHexChain: createTransactionHexChain,
+  createSignedTransactionsWithData: createSignedTransactionsWithData,
   getData: getData
 };

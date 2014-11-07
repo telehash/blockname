@@ -1,4 +1,4 @@
-jasmine.getEnv().defaultTimeoutInterval = 25000;
+jasmine.getEnv().defaultTimeoutInterval = 50000;
 
 var bitcoinTransactionBuilder = require("../src/bitcoin-transaction-builder");
 var helloblock = require("helloblock-js")({
@@ -37,16 +37,20 @@ describe("bitcoin transaction builder", function() {
       var privateKeyWIF = body.privateKeyWIF;
       var address = body.address;
       var unspentOutputs = body.unspents;
-      bitcoinTransactionBuilder.createTransactionHexList({
+      bitcoinTransactionBuilder.createSignedTransactionsWithData({
         data: data, 
         id: parseInt(Math.random()*16), 
         address: address, 
         unspentOutputs: unspentOutputs, 
         privateKeyWIF: privateKeyWIF 
-      }, function(err, transactionHexList) {
-        expect(transactionHexList.length).toBe(1);
-        var txHex = transactionHexList[0];
-        helloblock.transactions.propagate(txHex, function(err) {
+      }, function(err, signedTransactions) {
+        expect(signedTransactions.length).toBe(1);
+        var txHex = signedTransactions[0];
+        helloblock.transactions.propagate(txHex, function(err, res) {
+          console.log(res.status, "1/1");
+          if (err) {
+            return done(err);
+          }
           helloblock.addresses.getTransactions(address, function(err, res, transactions) {
             bitcoinTransactionBuilder.getData(transactions, function(error, decodedData) {
               expect(data).toBe(decodedData);
@@ -58,7 +62,7 @@ describe("bitcoin transaction builder", function() {
     });
   });
 
-  it("should create the transaction for a random string of 70 bytes using createTransactionHexList", function(done) {
+  it("should create the transaction for a random string of 70 bytes", function(done) {
     var data = randomString(70);
     helloblock.faucet.get(1, function(err, res, body) {
       if (err) {
@@ -68,18 +72,22 @@ describe("bitcoin transaction builder", function() {
       var address = body.address;
       var unspentOutputs = body.unspents;
       
-      bitcoinTransactionBuilder.createTransactionHexList({
+      bitcoinTransactionBuilder.createSignedTransactionsWithData({
         data: data, 
         id: parseInt(Math.random()*16), 
         address: address, 
         unspentOutputs: unspentOutputs, 
         privateKeyWIF: privateKeyWIF 
-      }, function(err, transactionHexList) {
-        expect(transactionHexList.length).toBe(2);
+      }, function(err, signedTransactions) {
+        expect(signedTransactions.length).toBe(2);
         var propagateCounter = 0;
         var propagateResponse = function(err, res, body) {
+          console.log(res.status, propagateCounter + 1 + "/" + signedTransactions.length);
+          if (err) {
+            return done(err);
+          }
           propagateCounter++;
-          if (propagateCounter == transactionHexList.length) {
+          if (propagateCounter == signedTransactions.length) {
             helloblock.addresses.getTransactions(address, function(err, res, transactions) {
               bitcoinTransactionBuilder.getData(transactions, function(error, decodedData) {
                 expect(data).toBe(decodedData);
@@ -88,16 +96,16 @@ describe("bitcoin transaction builder", function() {
             });
           }
         }
-        for (var i = 0; i < transactionHexList.length; i++) {
-          var txHex = transactionHexList[i];
+        for (var i = 0; i < signedTransactions.length; i++) {
+          var txHex = signedTransactions[i];
           helloblock.transactions.propagate(txHex, propagateResponse);
         };
       });
     });
   });
 
-  it("should create the transaction for a random string of 170 bytes using createTransactionHexList", function(done) {
-    var data = randomString(170);
+  it("should create the transaction for a random string of 175 bytes", function(done) {
+    var data = randomString(175);
     helloblock.faucet.get(1, function(err, res, body) {
       if (err) {
         return done(err);
@@ -106,18 +114,22 @@ describe("bitcoin transaction builder", function() {
       var address = body.address;
       var unspentOutputs = body.unspents;
       
-      bitcoinTransactionBuilder.createTransactionHexList({
+      bitcoinTransactionBuilder.createSignedTransactionsWithData({
         data: data, 
         id: parseInt(Math.random()*16), 
         address: address, 
         unspentOutputs: unspentOutputs, 
         privateKeyWIF: privateKeyWIF 
-      }, function(err, transactionHexList) {
-        expect(transactionHexList.length).toBe(5);
+      }, function(err, signedTransactions) {
+        expect(signedTransactions.length).toBe(5);
         var propagateCounter = 0;
         var propagateResponse = function(err, res, body) {
+          console.log(res.status, propagateCounter + 1 + "/" + signedTransactions.length);
+          if (err) {
+            return done(err);
+          }
           propagateCounter++;
-          if (propagateCounter == transactionHexList.length) {
+          if (propagateCounter == signedTransactions.length) {
             helloblock.addresses.getTransactions(address, function(err, res, transactions) {
               bitcoinTransactionBuilder.getData(transactions, function(error, decodedData) {
                 expect(data).toBe(decodedData);
@@ -126,15 +138,15 @@ describe("bitcoin transaction builder", function() {
             });
           }
           else {
-            helloblock.transactions.propagate(transactionHexList[propagateCounter], propagateResponse);
+            helloblock.transactions.propagate(signedTransactions[propagateCounter], propagateResponse);
           }
         }
-        helloblock.transactions.propagate(transactionHexList[0], propagateResponse);
+        helloblock.transactions.propagate(signedTransactions[0], propagateResponse);
       });
     });
   });
 
-  it("should create the transaction for full latin paragraph of 865 bytes using createTransactionHexList", function(done) {
+  it("should create the transaction for full latin paragraph of 865 bytes", function(done) {
     var data = loremIpsum.slice(0, 865);
     helloblock.faucet.get(1, function(err, res, body) {
       if (err) {
@@ -144,18 +156,22 @@ describe("bitcoin transaction builder", function() {
       var address = body.address;
       var unspentOutputs = body.unspents;
       
-      bitcoinTransactionBuilder.createTransactionHexList({
+      bitcoinTransactionBuilder.createSignedTransactionsWithData({
         data: data, 
         id: parseInt(Math.random()*16), 
         address: address, 
         unspentOutputs: unspentOutputs, 
         privateKeyWIF: privateKeyWIF 
-      }, function(err, transactionHexList) {
-        expect(transactionHexList.length).toBe(12);
+      }, function(err, signedTransactions) {
+        expect(signedTransactions.length).toBe(12);
         var propagateCounter = 0;
         var propagateResponse = function(err, res, body) {
+          console.log(res.status, propagateCounter + 1 + "/" + signedTransactions.length);
+          if (err) {
+            return done(err);
+          }
           propagateCounter++;
-          if (propagateCounter == transactionHexList.length) {
+          if (propagateCounter == signedTransactions.length) {
             helloblock.addresses.getTransactions(address, {limit: 20}, function(err, res, transactions) {
               bitcoinTransactionBuilder.getData(transactions, function(error, decodedData) {
                 expect(data).toBe(decodedData);
@@ -164,88 +180,10 @@ describe("bitcoin transaction builder", function() {
             });
           }
           else {
-            helloblock.transactions.propagate(transactionHexList[propagateCounter], propagateResponse);
+            helloblock.transactions.propagate(signedTransactions[propagateCounter], propagateResponse);
           }
         }
-        helloblock.transactions.propagate(transactionHexList[0], propagateResponse);
-      });
-    });
-  });
-
-  it("should create the transaction for a random string of 70 bytes using createTransactionHexChain", function(done) {
-    var data = randomString(70);
-    helloblock.faucet.get(1, function(err, res, body) {
-      if (err) {
-        return done(err);
-      }
-      var privateKeyWIF = body.privateKeyWIF;
-      var address = body.address;
-      var unspentOutputs = body.unspents;
-      bitcoinTransactionBuilder.createTransactionHexChain({
-        data: data, 
-        id: parseInt(Math.random()*16), 
-        address: address, 
-        unspentOutputs: unspentOutputs, 
-        privateKeyWIF: privateKeyWIF 
-      }, function(err, txHex, afterPropagation, txLength) {
-        var txIndex = 0;
-        var propagateResponse = function(err, res, body) {
-          txIndex++;
-          if (txIndex == txLength) {
-            helloblock.addresses.getTransactions(address, function(err, res, transactions) {
-              bitcoinTransactionBuilder.getData(transactions, function(error, decodedData) {
-                expect(data).toBe(decodedData);
-                done();
-              });
-            });
-          }
-          else {
-            var nextTxHash = body.txHash;
-            afterPropagation(txIndex, nextTxHash, function(err, nextTxHex) {
-              helloblock.transactions.propagate(nextTxHex, propagateResponse);
-            });
-          }
-        }
-        helloblock.transactions.propagate(txHex, propagateResponse);
-      });
-    });
-  });
-
-  it("should create the transaction for a random string of 130 bytes using createTransactionHexChain", function(done) {
-    var data = randomString(130);
-    helloblock.faucet.get(1, function(err, res, body) {
-      if (err) {
-        return done(err);
-      }
-      var privateKeyWIF = body.privateKeyWIF;
-      var address = body.address;
-      var unspentOutputs = body.unspents;
-      bitcoinTransactionBuilder.createTransactionHexChain({
-        data: data, 
-        id: parseInt(Math.random()*16), 
-        address: address, 
-        unspentOutputs: unspentOutputs, 
-        privateKeyWIF: privateKeyWIF 
-      }, function(err, txHex, afterPropagation, txLength) {
-        var txIndex = 0;
-        var propagateResponse = function(err, res, body) {
-          txIndex++;
-          if (txIndex == txLength) {
-            helloblock.addresses.getTransactions(address, function(err, res, transactions) {
-              bitcoinTransactionBuilder.getData(transactions, function(error, decodedData) {
-                expect(data).toBe(decodedData);
-                done();
-              });
-            });
-          }
-          else {
-            var nextTxHash = body.txHash;
-            afterPropagation(txIndex, nextTxHash, function(err, nextTxHex) {
-              helloblock.transactions.propagate(nextTxHex, propagateResponse);
-            });
-          }
-        }
-        helloblock.transactions.propagate(txHex, propagateResponse);
+        helloblock.transactions.propagate(signedTransactions[0], propagateResponse);
       });
     });
   });

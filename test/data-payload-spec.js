@@ -22,6 +22,12 @@ var randomJsonObject = function(messageLength) {
   return JSON.stringify(r);
 };
 
+// http://stackoverflow.com/questions/6274339/how-can-i-shuffle-an-array-in-javascript/6274398
+function shuffle(o){ //v1.0
+  for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+  return o;
+};
+
 describe("data payload", function() {
 
   it("should create a data payload for some random data of 30 bytes", function(done) {
@@ -152,6 +158,18 @@ describe("data payload", function() {
     dataPayload.create({data: data, id: 3}, function(err, payloads) {
       expect(err).toBeDefined();
       expect(payloads).toBe(false);
+      done();
+    });
+  });
+
+  it("should sort a data payload", function(done) {
+    var data = randomString(700);
+    dataPayload.create({data: data, id: 3}, function(err, payloads) {
+      var shuffledPayloads = shuffle(payloads.slice(0));
+      var sortedPayloads = dataPayload.sort(shuffledPayloads);
+      for (var i = 0; i < payloads.length; i++) {
+        expect(payloads[i]).toBe(sortedPayloads[i]);
+      };
       done();
     });
   });

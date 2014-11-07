@@ -16,6 +16,27 @@ var decompress = function(compressedBuffer, callback) {
   });
 };
 
+var sort = function(unsortedPayloads) {
+  var firstPayload;
+  var theRest = [];
+  for (var i = 0; i < unsortedPayloads.length; i++) {
+    var pl = unsortedPayloads[i];
+    var startHeader = pl.slice(0,3);
+    try {
+      var info = header.decodeStart(startHeader);
+      if (info) {
+        firstPayload = pl;
+      }
+    }
+    catch (e) {
+      var midHeader = pl.slice(0,2);
+      var info = header.decodeMid(midHeader);
+      theRest[info.index-1] = pl;
+    }
+  };
+  return [firstPayload].concat(theRest);
+};
+
 var create = function(options, callback) {
   var data = options.data;
   var id = options.id;
@@ -78,5 +99,6 @@ var decode = function(payloads, callback) {
 
 module.exports = {
   create: create,
-  decode: decode
+  decode: decode,
+  sort: sort
 };
