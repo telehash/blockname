@@ -1,3 +1,5 @@
+jasmine.getEnv().defaultTimeoutInterval = 50000;
+
 var blockcast = require("../src/index");
 var helloblock = require("helloblock-js")({
   network: 'testnet'
@@ -16,72 +18,64 @@ var randomJsonObject = function(messageLength) {
   return JSON.stringify(r);
 };
 
+var randomString = function(length) {
+  var characters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
+  var output = '';
+  for (var i = 0; i < length; i++) {
+    var r = Math.floor(Math.random() * characters.length);
+    output += characters.substring(r, r + 1);
+  }
+  return output;
+};
+
+var signFromPrivateKeyWIF = function(privateKeyWIF) {
+  return function(tx, callback) {
+    var key = Bitcoin.ECKey.fromWIF(privateKeyWIF);
+    tx.sign(0, key); 
+    callback(false, tx);
+  }
+};
+
+var propagateTransaction = function(tx, callback) {
+  helloblock.transactions.propagate(tx, function(err, res, body) {
+    callback(err, res);
+  });
+};
+
+var propagationStatus = function(response) {
+  console.log(response.response.status, response.count + 1 + "/" + response.transactionTotal);
+};
+
 describe("blockcast", function() {
 
-  // it("should tap the helloblock faucet", function(done) {
-  //   helloblock.faucet.get(1, function(error, response, body) {
-  //     var privateKeyWIF = body.privateKeyWIF;
-  //     expect(privateKeyWIF).toBeDefined();
-  //     done();
-  //   });
-  // });
+  it("should post a message of a random string of 110 bytes", function(done) {
 
-  // it("can create, propagate, retrieve and read a message with an OP_RETURN transaction", function(done) {
+    var data = randomString(70);
 
-  //   helloblock.faucet.get(1, function(err, res, body) {
+    helloblock.faucet.get(1, function(err, res, body) {
+      if (err) {
+        return done(err);
+      }
+      var privateKeyWIF = body.privateKeyWIF;
+      var address = body.address;
+      var unspentOutputs = body.unspents;
 
-  //     if (err) {
-  //       return done(err);
-  //     }
+      var signTransaction = signFromPrivateKeyWIF(privateKeyWIF);
 
-  //     var key = Bitcoin.ECKey.fromWIF(body.privateKeyWIF);
-  //     var address = body.address;
-  //     var unspent = body.unspents[0];
+      blockcast.post({
+        data: data,
+        address: address,
+        unspentOutputs: unspentOutputs,
+        propagateTransaction: propagateTransaction,
+        propagationStatus: propagationStatus,
+        signTransaction: signTransaction
+      }, function(error, response) {
+        expect(response.transactionTotal).toBe(2);
+        done();
+      });
 
-  //     // generate a random string and encode as a data output
-  //     var message = "automated test suites FTW";
-  //     var messageBuffer = new Buffer(message);
-  //     var messageScript = Bitcoin.Script.fromChunks([Bitcoin.opcodes.OP_RETURN, messageBuffer]);
+    });
 
-  //     var tx = new Bitcoin.TransactionBuilder();
-  //     tx.addInput(unspent.txHash, unspent.index);
-  //     tx.addOutput(address, unspent.value - 100);
-  //     tx.addOutput(messageScript, 0);
-  //     tx.sign(0, key);
-
-  //     helloblock.transactions.propagate(tx.build().toHex(), function(err) {
-  //       // no err means that the transaction has been successfully propagated
-  //       if (err) {
-  //         return done(err);
-  //       }
-
-  //       // Check that the message was propagated
-  //       helloblock.addresses.getTransactions(address, function(err, res, transactions) {
-  //         if (err) {
-  //           return done(err);
-  //         }
-
-  //         var transaction = transactions[0];
-
-  //         var messageCheck;
-
-  //         // Loop through the outputs and decode the message
-  //         var outputs = transaction.outputs
-  //         for (var j = outputs.length - 1; j >= 0; j--) {
-  //           var output = outputs[j];
-  //           var scriptPubKey = output.scriptPubKey;
-  //           var scriptPubKeyBuffer = new Buffer(scriptPubKey, 'hex');
-  //           if (scriptPubKeyBuffer[0] == 106) {
-  //             var messageBuffer = scriptPubKeyBuffer.slice(2,scriptPubKeyBuffer.length);
-  //             messageCheck = messageBuffer.toString();
-  //           }
-  //         }
-
-  //         expect(message).toBe(messageCheck);
-  //         done();
-  //       });
-  //     });
-  //   });
-  // });
+  });
 
 });

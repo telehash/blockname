@@ -1,23 +1,56 @@
-/*
+var bitcoinTransactionBuilder = require("./bitcoin-transaction-builder");
 
-3 byte start header, 2 byte each header
-allows for id 0-15 and 16 part total size
-(15packets*38bytes+37bytes=607 bytes)
-(607 byte total)(1600bit fee)($0.56)new fee($0.056)
-
-xxxx xxxx vers strt id   len
-
-0001 1111 0000 0000 0011 0010
-1f 00 /3 /2 DATA0
-0001 1111 0011 0001
-1f /3 /1 DATA1
-0001 1111 0011 0002
-1f /3 /2 DATA2
-
-*/
-
-var blockcast = {
-  
+var post = function(options, callback) {
+  var data = options.data;
+  var privateKeyWIF = options.privateKeyWIF;
+  var signTransaction = options.signTransaction;
+  var propagateTransaction = options.propagateTransaction;
+  var address = options.address;
+  var unspentOutputs = options.unspentOutputs;
+  var propagationStatus = options.propagationStatus || function() {};
+  var retryMax = options.retryMax || 5;
+  var id = options.id || 0; // THINK ABOUT THIS!!! Maybe go through their recent transactions by default? options.transactions?
+  bitcoinTransactionBuilder.createSignedTransactionsWithData({
+    data: data, 
+    id: id, 
+    address: address, 
+    unspentOutputs: unspentOutputs, 
+    privateKeyWIF: privateKeyWIF,
+    signTransaction: signTransaction
+  }, function(err, signedTransactions) {
+    var transactionTotal = signedTransactions.length;
+    var propagateCounter = 0;
+    var retryCounter = [];
+    var propagateResponse = function(err, res) {
+      propagationStatus({
+        response: res,
+        count: propagateCounter,
+        transactionTotal: transactionTotal
+      });
+      if (err) {
+        var rc = retryCounter[propagateCounter] || 0;
+        if (rc < retryMax) {
+          retryCounter[propagateCounter] = rc + 1;
+          propagateTransaction(signedTransactions[propagateCounter], propagateResponse);
+        }
+        else {
+          callback(err, false);
+        }
+      }
+      propagateCounter++;
+      if (propagateCounter < transactionTotal) {
+        propagateTransaction(signedTransactions[propagateCounter], propagateResponse);
+      }
+      else {
+        callback(false, {
+          transactionTotal: transactionTotal
+        });
+      }
+    }
+    propagateTransaction(signedTransactions[0], propagateResponse);
+  });
 };
 
-module.exports = blockcast;
+module.exports = {
+  post: post
+};
