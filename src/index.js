@@ -1,4 +1,5 @@
 var bitcoinTransactionBuilder = require("./bitcoin-transaction-builder");
+var dataPayload = require("./data-payload");
 
 var post = function(options, callback) {
   var data = options.data;
@@ -51,6 +52,53 @@ var post = function(options, callback) {
   });
 };
 
+var scan = function(options, callback) {
+  var messages = [];
+  var transactions = options.transactions;
+
+  var addressesWithPayloads = bitcoinTransactionBuilder.getPayloadsFromTransactions(transactions);
+
+  var addresses = {};
+  var messageCount = 0;
+  addressesWithPayloads.forEach(function(messageFragment) {
+    var address = messageFragment.address;
+    addresses[address] = addresses[address] ? addresses[address] : {};
+    var id = messageFragment.id;
+    if (!addresses[address][id]) {
+      addresses[address][id] = [];
+      messageCount++;
+    }
+    addresses[address][id].push(messageFragment.data);
+  });
+
+  var decodeCount = 0;
+  onDecode = function(error, decodedData) {
+    if (error) {
+      decodeCount++;
+      return;
+    }
+    var message = {
+      address: address,
+      message: decodedData
+    }
+    messages.push(message);
+    decodeCount++;
+    if (decodeCount == messageCount) {
+      callback(false, messages);
+    }
+  }
+
+  for (var address in addresses) {
+    var addressMessages = addresses[address];
+    for (var id in addressMessages) {
+      var data = addressMessages[id];
+      dataPayload.decode(data, onDecode);
+    }
+  }
+
+}
+
 module.exports = {
-  post: post
+  post: post,
+  scan: scan
 };

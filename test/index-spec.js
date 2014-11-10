@@ -78,4 +78,20 @@ describe("blockcast", function() {
 
   });
 
+  iit("should scan a block for messages", function(done) {
+
+    helloblock.blocks.getTransactions(307068 , {limit: 100}, function(err, res, transactions) {
+      blockcast.scan({
+        transactions: transactions
+      }, function(err, messages) {
+        expect(messages.length).toBe(7);
+        var msg = messages[0];
+        expect(msg.address).toBe('mgqNd45CJsb11pCKdS68t13a7vcbs4HAHY');
+        expect(msg.message).toBe('67ZUGK2M03aK3dbUK6UqllS2t3dKvWb8AnBOFeBL4qMZG4R1h2ep9thCFaDk0znZ65M1TeUK8OsK8TQN3hApdpP6u5AXq6Dx3Dsxv2fAsFq7Le');
+        done();
+      });
+    });
+
+  });
+
 });
