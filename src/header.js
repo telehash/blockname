@@ -8,7 +8,7 @@ var MAGIC_NUMBER = new Buffer("1f", "hex");
 var encodeStart = function(options) {
   var magicNumber = MAGIC_NUMBER;
   var version = VERSION;
-  var start = 0;
+  var index = 0;
   var id = options.id;
   var length = options.length;
   if (id > 15) {
@@ -17,7 +17,7 @@ var encodeStart = function(options) {
   if (length > 15) {
     throw new Error("length > 15");
   }
-  var byte1 = nibble.toByte([version, start]);
+  var byte1 = nibble.toByte([version, index]);
   var byte2 = nibble.toByte([id, length]);
   var startHeader = Buffer.concat([magicNumber, byte1, byte2]);
   return startHeader;
@@ -32,14 +32,15 @@ var decodeStart = function(startHeader) {
   var nibbles1 = nibble.fromByte(byte1);
   var nibbles2 = nibble.fromByte(byte2);
   var version = nibbles1[0];
-  var start = nibbles1[1];
+  var index = nibbles1[1];
   assert.equal(version, VERSION);
-  assert.equal(start, 0);
+  assert.equal(index, 0);
   var id = nibbles2[0];
   var length = nibbles2[1];
   return {
     id: id,
-    length: length
+    length: length,
+    index: index
   }
 };
 

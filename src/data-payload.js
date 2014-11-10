@@ -78,11 +78,31 @@ var create = function(options, callback) {
   });
 };
 
+var getInfo = function(payload) {
+  var info;
+  try {
+    var startHeader = payload.slice(0,3);
+    info = header.decodeStart(startHeader);
+  }
+  catch (e) {
+    var midHeader = payload.slice(0,2);
+    info = header.decodeMid(midHeader); 
+  }
+  return info;
+};
+
 var decode = function(payloads, callback) {
   var firstPayload = payloads[0];
   var startHeader = firstPayload.slice(0,3);
   var compressedBuffer;
-  var info = header.decodeStart(startHeader);
+  var info;
+  try {
+    info = header.decodeStart(startHeader);
+  }
+  catch (e) {
+    callback("no start header", false);
+    return;
+  }
   var id = info.id;
   var length = info.length;
   assert.equal(payloads.length, length);
@@ -100,5 +120,6 @@ var decode = function(payloads, callback) {
 module.exports = {
   create: create,
   decode: decode,
+  getInfo: getInfo,
   sort: sort
 };

@@ -37,9 +37,10 @@ describe("bitcoin transaction builder", function() {
       var privateKeyWIF = body.privateKeyWIF;
       var address = body.address;
       var unspentOutputs = body.unspents;
+      var id = parseInt(Math.random()*16);
       bitcoinTransactionBuilder.createSignedTransactionsWithData({
         data: data, 
-        id: parseInt(Math.random()*16), 
+        id: id, 
         address: address, 
         unspentOutputs: unspentOutputs, 
         privateKeyWIF: privateKeyWIF 
@@ -52,7 +53,7 @@ describe("bitcoin transaction builder", function() {
             return done(err);
           }
           helloblock.addresses.getTransactions(address, function(err, res, transactions) {
-            bitcoinTransactionBuilder.getData(transactions, function(error, decodedData) {
+            bitcoinTransactionBuilder.getData({address: address, transactions:transactions, id:id}, function(error, decodedData) {
               expect(data).toBe(decodedData);
               done();
             });
@@ -71,10 +72,10 @@ describe("bitcoin transaction builder", function() {
       var privateKeyWIF = body.privateKeyWIF;
       var address = body.address;
       var unspentOutputs = body.unspents;
-      
+      var id = parseInt(Math.random()*16);
       bitcoinTransactionBuilder.createSignedTransactionsWithData({
         data: data, 
-        id: parseInt(Math.random()*16), 
+        id: id, 
         address: address, 
         unspentOutputs: unspentOutputs, 
         privateKeyWIF: privateKeyWIF 
@@ -89,7 +90,7 @@ describe("bitcoin transaction builder", function() {
           propagateCounter++;
           if (propagateCounter == signedTransactions.length) {
             helloblock.addresses.getTransactions(address, function(err, res, transactions) {
-              bitcoinTransactionBuilder.getData(transactions, function(error, decodedData) {
+              bitcoinTransactionBuilder.getData({address: address, transactions:transactions, id:id}, function(error, decodedData) {
                 expect(data).toBe(decodedData);
                 done();
               });
@@ -113,10 +114,10 @@ describe("bitcoin transaction builder", function() {
       var privateKeyWIF = body.privateKeyWIF;
       var address = body.address;
       var unspentOutputs = body.unspents;
-      
+      var id = parseInt(Math.random()*16);
       bitcoinTransactionBuilder.createSignedTransactionsWithData({
         data: data, 
-        id: parseInt(Math.random()*16), 
+        id: id, 
         address: address, 
         unspentOutputs: unspentOutputs, 
         privateKeyWIF: privateKeyWIF 
@@ -131,7 +132,7 @@ describe("bitcoin transaction builder", function() {
           propagateCounter++;
           if (propagateCounter == signedTransactions.length) {
             helloblock.addresses.getTransactions(address, function(err, res, transactions) {
-              bitcoinTransactionBuilder.getData(transactions, function(error, decodedData) {
+              bitcoinTransactionBuilder.getData({address: address, transactions:transactions, id:id}, function(error, decodedData) {
                 expect(data).toBe(decodedData);
                 done();
               });
@@ -155,10 +156,10 @@ describe("bitcoin transaction builder", function() {
       var privateKeyWIF = body.privateKeyWIF;
       var address = body.address;
       var unspentOutputs = body.unspents;
-      
+      var id = parseInt(Math.random()*16);
       bitcoinTransactionBuilder.createSignedTransactionsWithData({
         data: data, 
-        id: parseInt(Math.random()*16), 
+        id: id, 
         address: address, 
         unspentOutputs: unspentOutputs, 
         privateKeyWIF: privateKeyWIF 
@@ -173,7 +174,7 @@ describe("bitcoin transaction builder", function() {
           propagateCounter++;
           if (propagateCounter == signedTransactions.length) {
             helloblock.addresses.getTransactions(address, {limit: 20}, function(err, res, transactions) {
-              bitcoinTransactionBuilder.getData(transactions, function(error, decodedData) {
+              bitcoinTransactionBuilder.getData({address: address, transactions:transactions, id:id}, function(error, decodedData) {
                 expect(data).toBe(decodedData);
                 done();
               });

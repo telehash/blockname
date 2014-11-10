@@ -22,27 +22,47 @@ var createTransactionWithPayload = function(payload) {
   return tx;
 };
 
-var getPayloadFromTransactions = function(transactions) {
+var getPayloadsFromTransactions = function(transactions) {
   var payloads = [];
   for (var i = 0; i < transactions.length; i++) {
     var transaction = transactions[i];
-    var payload;
     var outputs = transaction.outputs;
+    var address = transaction.inputs[0].address;
     for (var j = outputs.length - 1; j >= 0; j--) {
       var output = outputs[j];
       var scriptPubKey = output.scriptPubKey;
       var scriptPubKeyBuffer = new Buffer(scriptPubKey, 'hex');
-      if (scriptPubKeyBuffer[0] == 106) {
+      if (scriptPubKeyBuffer[0] == 106 && scriptPubKeyBuffer[2] == 31) {
         var payload = scriptPubKeyBuffer.slice(2, scriptPubKeyBuffer.length);
-        payloads.push(payload);
+        var info = dataPayload.getInfo(payload);
+        var data = payload;
+        payloads.push({
+          data: payload,
+          id: info.id,
+          index: info.index,
+          address: address
+        });
       }
     }
   };
   return payloads;
 };
 
-var getData = function(transactions, callback) {
-  var unsortedPayloads = getPayloadFromTransactions(transactions);
+var findByIdAndAddress = function(payloads, options) {
+  var matchingPayloads = [];
+  payloads.forEach(function(payload) {
+    if (payload.id == options.id && payload.address == options.address) {
+      matchingPayloads.push(payload.data);
+    }
+  });
+  return matchingPayloads;
+}
+
+var getData = function(options, callback) {
+  var transactions = options.transactions;
+  var address = options.address;
+  var id = options.id;
+  var unsortedPayloads = findByIdAndAddress(getPayloadsFromTransactions(transactions), {address: address, id: id});
   var payloads = dataPayload.sort(unsortedPayloads);
   dataPayload.decode(payloads, function(error, decodedData) {
     callback(error, decodedData)
@@ -116,5 +136,6 @@ var createSignedTransactionsWithData = function(options, callback) {
 
 module.exports = {
   createSignedTransactionsWithData: createSignedTransactionsWithData,
+  getPayloadsFromTransactions: getPayloadsFromTransactions,
   getData: getData
 };
