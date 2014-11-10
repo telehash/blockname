@@ -78,7 +78,7 @@ describe("blockcast", function() {
 
   });
 
-  iit("should scan a block for messages", function(done) {
+  it("should scan a block for messages", function(done) {
 
     helloblock.blocks.getTransactions(307068 , {limit: 100}, function(err, res, transactions) {
       blockcast.scan({

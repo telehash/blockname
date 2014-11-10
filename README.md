@@ -1,14 +1,14 @@
 blockcast
 ===
 
-A decentralized messaging application protocol for publishing messages to the Bitcoin blockchain.
+A decentralized messaging application protocol for publishing to the Bitcoin blockchain.
 
 Why build a decentralized messaging application?
 ---
 
 To create an open platform for building social software applications. 
 
-The incentive structures of crypto-currencies allow for users to control their own identities and data provided that they pay for the costs.
+The incentive structures of crypto-currencies allow for users to control their own identities and data. Users must directly pay for the costs of broadcasting information.
 
 Why Bitcoin?
 ---
