@@ -53,7 +53,7 @@ And finally we're ready to post.
 
 ```javascript
 blockcast.post({
-  data: "Hello, world!,
+  data: "Hello, world!",
   address: address,
   unspentOutputs: unspentOutputs,
   propagateTransaction: propagateTransaction,
