@@ -1,4 +1,5 @@
 var bitcoinTransactionBuilder = require("./bitcoin-transaction-builder");
+var simpleMessage = require("./simple-message");
 var dataPayload = require("./data-payload");
 
 var post = function(options, callback) {
@@ -98,7 +99,33 @@ var scan = function(options, callback) {
 
 }
 
+var simplePost = function(options, callback) {
+  var data = new Buffer(options.message);
+  var privateKeyWIF = options.privateKeyWIF;
+  var signTransaction = options.signTransaction;
+  var propagateTransaction = options.propagateTransaction;
+  var address = options.address;
+  var unspentOutputs = options.unspentOutputs;
+  simpleMessage.createSignedTransactionWithData({
+    data: data, 
+    address: address, 
+    unspentOutputs: unspentOutputs, 
+    privateKeyWIF: privateKeyWIF,
+    signTransaction: signTransaction
+  }, function(err, signedTxHash) {
+    var propagateResponse = function(err, res) {
+      if (err) {
+        callback(err, "failure");
+        return;
+      }
+      callback(false, "success");
+    }
+    propagateTransaction(signedTxHash, propagateResponse);
+  });
+};
+
 module.exports = {
+  simplePost: simplePost,
   post: post,
   scan: scan
 };

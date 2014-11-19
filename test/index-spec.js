@@ -94,4 +94,34 @@ describe("blockcast", function() {
 
   });
 
+  it("should create and post a simplePost", function(done) {
+
+    var message = randomString(40);
+
+    helloblock.faucet.get(1, function(err, res, body) {
+      if (err) {
+        return done(err);
+      }
+      var privateKeyWIF = body.privateKeyWIF;
+      var address = body.address;
+      var unspentOutputs = body.unspents;
+
+      var signTransaction = signFromPrivateKeyWIF(privateKeyWIF);
+
+      blockcast.simplePost({
+        message: message,
+        address: address,
+        unspentOutputs: unspentOutputs,
+        propagateTransaction: propagateTransaction,
+        propagationStatus: propagationStatus,
+        signTransaction: signTransaction
+      }, function(error, response) {
+        expect(response).toBe('success');
+        done();
+      });
+
+    });
+
+  });
+
 });
