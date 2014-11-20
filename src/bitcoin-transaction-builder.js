@@ -78,8 +78,21 @@ var signFromPrivateKeyWIF = function(privateKeyWIF) {
   }
 };
 
+var signFromTransactionHex = function(signTransactionHex) {
+  if (!signTransactionHex) {
+    return false;
+  }
+  return function(tx, callback) {
+    var txHex = tx.build().toHex();
+    signTransactionHex(txHex, function(error, signedTxHex) {
+      var signedTx = Bitcoin.TransactionBuilder.fromTransaction(Bitcoin.Transaction.fromHex(signedTxHex));
+      callback(error, signedTx);
+    });
+  };
+};
+
 var createSignedTransactionsWithData = function(options, callback) {
-  var signTransaction = options.signTransaction || signFromPrivateKeyWIF(options.privateKeyWIF);
+  var signTransaction = options.signTransaction || signFromTransactionHex(options.signTransactionHex) || signFromPrivateKeyWIF(options.privateKeyWIF);
   options.signTransaction = signTransaction;
   var data = options.data;
   var unspentOutputs = options.unspentOutputs;

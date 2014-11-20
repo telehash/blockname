@@ -6,6 +6,7 @@ var post = function(options, callback) {
   var data = options.data;
   var privateKeyWIF = options.privateKeyWIF;
   var signTransaction = options.signTransaction;
+  var signTransactionHex = options.signTransactionHex;
   var propagateTransaction = options.propagateTransaction;
   var address = options.address;
   var fee = options.fee;
@@ -20,7 +21,8 @@ var post = function(options, callback) {
     fee: fee,
     unspentOutputs: unspentOutputs, 
     privateKeyWIF: privateKeyWIF,
-    signTransaction: signTransaction
+    signTransaction: signTransaction,
+    signTransactionHex: signTransactionHex
   }, function(err, signedTransactions) {
     var transactionTotal = signedTransactions.length;
     var propagateCounter = 0;
@@ -105,6 +107,7 @@ var simplePost = function(options, callback) {
   var data = new Buffer(options.message);
   var privateKeyWIF = options.privateKeyWIF;
   var signTransaction = options.signTransaction;
+  var signTransactionHex = options.signTransactionHex;
   var propagateTransaction = options.propagateTransaction;
   var address = options.address;
   var unspentOutputs = options.unspentOutputs;
@@ -115,7 +118,8 @@ var simplePost = function(options, callback) {
     unspentOutputs: unspentOutputs, 
     privateKeyWIF: privateKeyWIF,
     fee: fee,
-    signTransaction: signTransaction
+    signTransaction: signTransaction,
+    signTransactionHex: signTransactionHex
   }, function(err, signedTxHex) {
     var propagateResponse = function(err, res) {
       if (err) {

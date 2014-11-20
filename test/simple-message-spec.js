@@ -1,5 +1,6 @@
 jasmine.getEnv().defaultTimeoutInterval = 50000;
 
+var Bitcoin = require("bitcoinjs-lib");
 var simpleMessage = require("../src/simple-message");
 var helloblock = require("helloblock-js")({
   network: 'testnet'
@@ -26,6 +27,16 @@ var randomString = function(length) {
   return output;
 };
 
+var signTransactionHexFromPrivateKeyWIF = function(privateKeyWIF) {
+  return function(txHex, callback) {
+    var tx = Bitcoin.TransactionBuilder.fromTransaction(Bitcoin.Transaction.fromHex(txHex));
+    var key = Bitcoin.ECKey.fromWIF(privateKeyWIF);
+    tx.sign(0, key); 
+    var signedTxHex = tx.build().toHex();
+    callback(false, signedTxHex);
+  }
+};
+
 describe("simple message", function() {
 
   it("should create the transaction for a random string of 40 characters", function(done) {
@@ -36,6 +47,7 @@ describe("simple message", function() {
         return done(err);
       }
       var privateKeyWIF = body.privateKeyWIF;
+      var signTransactionHex = signTransactionHexFromPrivateKeyWIF(privateKeyWIF);
       var address = body.address;
       var unspentOutputs = body.unspents;
       var id = parseInt(Math.random()*16);
@@ -44,7 +56,7 @@ describe("simple message", function() {
         id: id, 
         address: address, 
         unspentOutputs: unspentOutputs, 
-        privateKeyWIF: privateKeyWIF 
+        signTransactionHex: signTransactionHex 
       }, function(err, signedTxHex) {
         helloblock.transactions.propagate(signedTxHex, function(err, res) {
           console.log(res.status, "1/1");
