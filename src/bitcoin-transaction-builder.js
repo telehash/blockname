@@ -8,8 +8,9 @@ var loadAndSignTransaction = function(options, callback) {
   var tx = options.tx;
   var unspent = options.unspent;
   var address = options.address;
+  var fee = options.fee || 10;
   tx.addInput(unspent.txHash, unspent.index);
-  tx.addOutput(address, unspent.value - 100);
+  tx.addOutput(address, unspent.value - fee);
   options.signTransaction(tx, function(err, signedTx) {
     callback(false, signedTx);
   });

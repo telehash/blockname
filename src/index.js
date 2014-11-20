@@ -8,6 +8,7 @@ var post = function(options, callback) {
   var signTransaction = options.signTransaction;
   var propagateTransaction = options.propagateTransaction;
   var address = options.address;
+  var fee = options.fee;
   var unspentOutputs = options.unspentOutputs;
   var propagationStatus = options.propagationStatus || function() {};
   var retryMax = options.retryMax || 5;
@@ -16,6 +17,7 @@ var post = function(options, callback) {
     data: data, 
     id: id, 
     address: address, 
+    fee: fee,
     unspentOutputs: unspentOutputs, 
     privateKeyWIF: privateKeyWIF,
     signTransaction: signTransaction
@@ -106,11 +108,13 @@ var simplePost = function(options, callback) {
   var propagateTransaction = options.propagateTransaction;
   var address = options.address;
   var unspentOutputs = options.unspentOutputs;
+  var fee = options.fee;
   simpleMessage.createSignedTransactionWithData({
     data: data, 
     address: address, 
     unspentOutputs: unspentOutputs, 
     privateKeyWIF: privateKeyWIF,
+    fee: fee,
     signTransaction: signTransaction
   }, function(err, signedTxHash) {
     var propagateResponse = function(err, res) {

@@ -19,12 +19,13 @@ var createSignedTransactionWithData = function(options, callback) {
   var unspentOutputs = options.unspentOutputs;
   var unspent = unspentOutputs[0];
   var address = options.address;
+  var fee = options.fee || 10;
   var privateKeyWIF = options.privateKeyWIF;
   var payloadScript = Bitcoin.Script.fromChunks([Bitcoin.opcodes.OP_RETURN, data]);
   var tx = new Bitcoin.TransactionBuilder();
   tx.addOutput(payloadScript, 0);
   tx.addInput(unspent.txHash, unspent.index);
-  tx.addOutput(address, unspent.value - 100);
+  tx.addOutput(address, unspent.value - fee);
   signTransaction(tx, function(err, signedTx) {
     var signedTxBuilt = signedTx.build();
     var signedTxHex = signedTxBuilt.toHex();
