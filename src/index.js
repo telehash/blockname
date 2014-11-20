@@ -116,7 +116,7 @@ var simplePost = function(options, callback) {
     privateKeyWIF: privateKeyWIF,
     fee: fee,
     signTransaction: signTransaction
-  }, function(err, signedTxHash) {
+  }, function(err, signedTxHex) {
     var propagateResponse = function(err, res) {
       if (err) {
         callback(err, "failure");
@@ -124,7 +124,7 @@ var simplePost = function(options, callback) {
       }
       callback(false, "success");
     }
-    propagateTransaction(signedTxHash, propagateResponse);
+    propagateTransaction(signedTxHex, propagateResponse);
   });
 };
 
