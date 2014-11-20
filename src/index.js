@@ -168,5 +168,6 @@ module.exports = {
   simplePost: simplePost,
   post: post,
   scan: scan,
-  scanSingle: scanSingle
+  scanSingle: scanSingle,
+  parse: dataPayload.getInfo
 };
