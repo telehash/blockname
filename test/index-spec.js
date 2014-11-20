@@ -94,6 +94,23 @@ describe("blockcast", function() {
 
   });
 
+  it("should scan a single transaction", function(done) {
+    var txHash = "ec42f55249fb664609ef4329dcce3cab6d6ae14f6860a602747a72f966de3e13";
+    var getTransaction = function(txHash, callback) {
+      helloblock.transactions.get(txHash, function(err, res, tx) {
+        callback(err, tx);
+      });
+    };
+    blockcast.scanSingle({
+      txHash: txHash,
+      getTransaction: getTransaction
+    }, function(err, message) {
+      expect(message).toBe("zhhTf8FwMbncVmkkFlPIHmHi8ebif9oZzarnHFVGXpTvIlbSutrOlzA6npQnpn2SkfuhbytJQqdLiQ0MFRDfIqbFkvakl3h3nSHJlLPi5T50SR");
+      done();
+    });
+  });
+
+
   it("should create and post a simplePost", function(done) {
 
     var message = randomString(40);

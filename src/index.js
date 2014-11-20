@@ -57,6 +57,38 @@ var post = function(options, callback) {
   });
 };
 
+var scanSingle = function(options, callback) {
+  var txHash = options.txHash;
+  var getTransaction = options.getTransaction;
+  var allTransactions = [];
+  var payloadDatum = [];
+  var transactionTotal;
+  var getNextTransaction = function(txHash) {
+    getTransaction(txHash, function(err, tx) {
+      allTransactions.push(tx);
+      var payload = bitcoinTransactionBuilder.getPayloadsFromTransactions([tx])[0];
+      payloadDatum.push(payload.data);
+      if (allTransactions.length == transactionTotal) {
+        dataPayload.decode(payloadDatum, function(err, data) {
+          callback(err, data);
+        });
+      }
+      else {
+        var nextTxHash = tx.outputs[1].nextTxHash;
+        getNextTransaction(nextTxHash);
+      }
+    });
+  };
+  getTransaction(txHash, function(err, tx) {
+    allTransactions.push(tx);
+    var payload = bitcoinTransactionBuilder.getPayloadsFromTransactions([tx])[0];
+    payloadDatum.push(payload.data);
+    transactionTotal = payload.length;
+    var nextTxHash = tx.outputs[1].nextTxHash;
+    getNextTransaction(nextTxHash);
+  });
+};
+
 var scan = function(options, callback) {
   var messages = [];
   var transactions = options.transactions;
@@ -135,5 +167,6 @@ var simplePost = function(options, callback) {
 module.exports = {
   simplePost: simplePost,
   post: post,
-  scan: scan
+  scan: scan,
+  scanSingle: scanSingle
 };

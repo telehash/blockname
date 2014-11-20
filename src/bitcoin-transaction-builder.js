@@ -41,6 +41,7 @@ var getPayloadsFromTransactions = function(transactions) {
           data: payload,
           id: info.id,
           index: info.index,
+          length: info.length,
           address: address
         });
       }
