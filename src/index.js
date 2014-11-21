@@ -64,6 +64,10 @@ var scanSingle = function(options, callback) {
   var payloadDatum = [];
   var transactionTotal;
   var getNextTransaction = function(txHash) {
+    if (!txHash) {
+      callback("missing: " + allTransactions.length + 1, false);
+      return;
+    }
     getTransaction(txHash, function(err, tx) {
       allTransactions.push(tx);
       var payload = bitcoinTransactionBuilder.getPayloadsFromTransactions([tx])[0];
