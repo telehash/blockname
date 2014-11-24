@@ -1,6 +1,7 @@
 var bitcoinTransactionBuilder = require("./bitcoin-transaction-builder");
 var simpleMessage = require("./simple-message");
 var dataPayload = require("./data-payload");
+var openTip = require("./open-tip");
 
 var post = function(options, callback) {
   var data = options.data;
@@ -23,7 +24,7 @@ var post = function(options, callback) {
     privateKeyWIF: privateKeyWIF,
     signTransaction: signTransaction,
     signTransactionHex: signTransactionHex
-  }, function(err, signedTransactions) {
+  }, function(err, signedTransactions, txHash) {
     var transactionTotal = signedTransactions.length;
     var propagateCounter = 0;
     var retryCounter = [];
@@ -49,6 +50,8 @@ var post = function(options, callback) {
       }
       else {
         callback(false, {
+          txHash: txHash,
+          data: data,
           transactionTotal: transactionTotal
         });
       }
@@ -156,15 +159,69 @@ var simplePost = function(options, callback) {
     fee: fee,
     signTransaction: signTransaction,
     signTransactionHex: signTransactionHex
-  }, function(err, signedTxHex) {
+  }, function(err, signedTxHex, txHash) {
     var propagateResponse = function(err, res) {
-      if (err) {
-        callback(err, "failure");
-        return;
+      var postTx = {
+        message: options.message,
+        txHash: txHash
       }
-      callback(false, "success");
+      if (err) {
+        postTx.propagateResponse = "failure";
+      }
+      else {
+        postTx.propagateResponse = "success";
+      }
+      callback(err, postTx);
     }
     propagateTransaction(signedTxHex, propagateResponse);
+  });
+};
+
+var tip = function(options, callback) {
+  var tipTransactionHash = options.tipTransactionHash;
+  var tipDestinationAddress = options.tipDestinationAddress;
+  var tipAmount = options.tipAmount || 10000;
+  var tipDestinationAddress = options.tipDestinationAddress;
+  var privateKeyWIF = options.privateKeyWIF;
+  var signTransaction = options.signTransaction;
+  var signTransactionHex = options.signTransactionHex;
+  var propagateTransaction = options.propagateTransaction;
+  var address = options.address;
+  var unspentOutputs = options.unspentOutputs;
+  var fee = options.fee;
+  openTip.createSignedTransaction({
+    tipTransactionHash: tipTransactionHash,
+    tipDestinationAddress: tipDestinationAddress,
+    tipAmount: tipAmount,
+    address: address, 
+    unspentOutputs: unspentOutputs, 
+    fee: fee,
+    signTransaction: signTransaction,
+    signTransactionHex: signTransactionHex
+  }, function(err, signedTxHex, txHash) {
+    var propagateResponse = function(err, res) {
+      var tipTx = {
+        tipTransactionHash: tipTransactionHash,
+        tipDestinationAddress: tipDestinationAddress,
+        tipAmount: tipAmount,
+        txHash: txHash
+      }
+      if (err) {
+        tipTx.propagateResponse = "failure";
+      }
+      else {
+        tipTx.propagateResponse = "success";
+      }
+      callback(err, tipTx);
+    }
+    propagateTransaction(signedTxHex, propagateResponse);
+  });
+};
+
+var parseTip = function(tx, callback) {
+  openTip.getTips({transactions: [tx]}, function(err, tips) {
+    var tip = tips[0];
+    callback(err, tip);
   });
 };
 
@@ -173,5 +230,7 @@ module.exports = {
   post: post,
   scan: scan,
   scanSingle: scanSingle,
-  parse: dataPayload.getInfo
+  parse: dataPayload.getInfo,
+  tip: tip,
+  parseTip: parseTip
 };

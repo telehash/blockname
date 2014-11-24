@@ -1,4 +1,8 @@
+
 var Bitcoin = require("bitcoinjs-lib");
+
+var header = "♥";
+var headerHex = "e299a5";
 
 var signFromPrivateKeyWIF = function(privateKeyWIF) {
   return function(tx, callback) {
@@ -21,14 +25,13 @@ var signFromTransactionHex = function(signTransactionHex) {
   };
 };
 
-var createSignedTransactionWithData = function(options, callback) {
+var createSignedTransaction = function(options, callback) {
+  var tipTransactionHash = options.tipTransactionHash;
+  var tipDestinationAddress = options.tipDestinationAddress;
+  var tipAmount = options.tipAmount || 10000;
+  var data = new Buffer(headerHex + tipTransactionHash, "hex");
   var signTransaction = options.signTransaction || signFromTransactionHex(options.signTransactionHex) || signFromPrivateKeyWIF(options.privateKeyWIF);
   options.signTransaction = signTransaction;
-  var data = options.data;
-  if (data.length > 40) {
-    callback("too large", false);
-    return;
-  };
   var unspentOutputs = options.unspentOutputs;
   var unspent = unspentOutputs[0];
   var address = options.address;
@@ -38,7 +41,8 @@ var createSignedTransactionWithData = function(options, callback) {
   var tx = new Bitcoin.TransactionBuilder();
   tx.addOutput(payloadScript, 0);
   tx.addInput(unspent.txHash, unspent.index);
-  tx.addOutput(address, unspent.value - fee);
+  tx.addOutput(tipDestinationAddress, tipAmount);
+  tx.addOutput(address, unspent.value - fee - tipAmount);
   signTransaction(tx, function(err, signedTx) {
     var signedTxBuilt = signedTx.build();
     var signedTxHex = signedTxBuilt.toHex();
@@ -47,28 +51,46 @@ var createSignedTransactionWithData = function(options, callback) {
   });
 };
 
-var getData = function(options, callback) {
+var getTips = function(options, callback) {
   var transactions = options.transactions;
-  var messages = [];
+  var tips = [];
   transactions.forEach(function(tx) {
+    var tip = {};
+    var sources = [];
+    tx.inputs.forEach(function(input) {
+      var sourceAddress = input.address;
+      if (sourceAddress) {
+        sources.push(sourceAddress);
+      }
+    });
     tx.outputs.forEach(function(output) {
       if (output.type == 'nulldata') {
         var scriptPubKey = output.scriptPubKey;
         if (scriptPubKey.slice(0,2) == "6a") {
           var data = scriptPubKey.slice(4, 84);
-          var bufferData = new Buffer(data, "hex");
-          var message = bufferData.toString('utf8');
-          messages.push(message)
+          if (data.slice(0,6) == headerHex && data.length == 70) {
+            tip.tipTransactionHash = data.slice(6, 70);
+          }
+        }
+      }
+      else if (output.type == 'pubkeyhash') {
+        var destinationAddress = output.address;
+        if (sources.indexOf(destinationAddress) < 0) {
+          tip.tipDestinationAddress = destinationAddress;
+          tip.tipAmount = output.value;
         }
       }
     });
+    if (tip.tipTransactionHash && tip.tipAmount && tip.tipDestinationAddress) {
+      tips.push(tip)
+    }
   });
-  callback(false, messages)
+  callback(false, tips)
 };
 
-var simpleMessage = {
-  createSignedTransactionWithData: createSignedTransactionWithData,
-  getData: getData
+var openTip = {
+  createSignedTransaction: createSignedTransaction,
+  getTips: getTips
 }
 
-module.exports = simpleMessage;
+module.exports = openTip;

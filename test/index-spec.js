@@ -69,8 +69,10 @@ describe("blockcast", function() {
         propagateTransaction: propagateTransaction,
         propagationStatus: propagationStatus,
         signTransaction: signTransaction
-      }, function(error, response) {
-        expect(response.transactionTotal).toBe(2);
+      }, function(error, blockcastTx) {
+        expect(blockcastTx.data).toBe(data);
+        expect(blockcastTx.txHash).toBeDefined();
+        expect(blockcastTx.transactionTotal).toBe(2);
         done();
       });
 
@@ -130,10 +132,46 @@ describe("blockcast", function() {
         address: address,
         unspentOutputs: unspentOutputs,
         propagateTransaction: propagateTransaction,
-        propagationStatus: propagationStatus,
         signTransaction: signTransaction
-      }, function(error, response) {
-        expect(response).toBe('success');
+      }, function(error, postTx) {
+        expect(postTx.message).toBe(message);
+        expect(postTx.txHash).toBeDefined();
+        expect(postTx.propagateResponse).toBe('success');
+        done();
+      });
+
+    });
+
+  });
+
+  it("should tip a post", function(done) {
+
+    var tipDestinationAddress = "mr5qCMve7UVgJ8RCsqzsgQz9ry7sonEoKc";
+    var tipTransactionHash = "ec42f55249fb664609ef4329dcce3cab6d6ae14f6860a602747a72f966de3e13";
+
+    helloblock.faucet.get(1, function(err, res, body) {
+      if (err) {
+        return done(err);
+      }
+      var privateKeyWIF = body.privateKeyWIF;
+      var address = body.address;
+      var unspentOutputs = body.unspents;
+
+      var signTransaction = signFromPrivateKeyWIF(privateKeyWIF);
+
+      blockcast.tip({
+        tipDestinationAddress: tipDestinationAddress,
+        tipTransactionHash: tipTransactionHash,
+        address: address,
+        unspentOutputs: unspentOutputs,
+        propagateTransaction: propagateTransaction,
+        signTransaction: signTransaction
+      }, function(error, tipTx) {
+        expect(tipTx.tipDestinationAddress).toBe(tipDestinationAddress);
+        expect(tipTx.tipTransactionHash).toBe(tipTransactionHash);
+        expect(tipTx.tipAmount).toBe(10000);
+        expect(tipTx.txHash).toBeDefined();
+        expect(tipTx.propagateResponse).toBe('success');
         done();
       });
 

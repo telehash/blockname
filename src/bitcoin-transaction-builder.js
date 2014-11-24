@@ -106,20 +106,25 @@ var createSignedTransactionsWithData = function(options, callback) {
     var signedTransactions = [];
     var signedTransactionsCounter = 0;
     var payloadsLength = payloads.length;
+    var txHash;
 
     var signedTransactionResponse = function(err, signedTx) {
       var signedTxBuilt = signedTx.build();
       var signedTxHex = signedTxBuilt.toHex();
+      var signedTxHash = signedTxBuilt.getId();
+      if (signedTransactionsCounter == 0) {
+        txHash = signedTxHash;
+      }
       signedTransactions[signedTransactionsCounter] = signedTxHex;
       signedTransactionsCounter++;
       if (signedTransactionsCounter == payloadsLength) {
-        callback(false, signedTransactions);
+        callback(false, signedTransactions, txHash);
       }
       else {
         var payload = payloads[signedTransactionsCounter];
         var tx = createTransactionWithPayload(payload);
         var value = signedTx.tx.outs[1].value;
-        var signedTxHash = signedTxBuilt.getId();
+        
         var index = 1;
 
         var unspent = {

@@ -50,10 +50,8 @@ describe("simple message", function() {
       var signTransactionHex = signTransactionHexFromPrivateKeyWIF(privateKeyWIF);
       var address = body.address;
       var unspentOutputs = body.unspents;
-      var id = parseInt(Math.random()*16);
       simpleMessage.createSignedTransactionWithData({
         data: data, 
-        id: id, 
         address: address, 
         unspentOutputs: unspentOutputs, 
         signTransactionHex: signTransactionHex 
@@ -85,10 +83,8 @@ describe("simple message", function() {
       var privateKeyWIF = body.privateKeyWIF;
       var address = body.address;
       var unspentOutputs = body.unspents;
-      var id = parseInt(Math.random()*16);
       simpleMessage.createSignedTransactionWithData({
-        data: data, 
-        id: id, 
+        data: data,
         address: address, 
         unspentOutputs: unspentOutputs, 
         privateKeyWIF: privateKeyWIF 
