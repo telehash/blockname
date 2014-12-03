@@ -84,7 +84,7 @@ var signFromTransactionHex = function(signTransactionHex) {
     return false;
   }
   return function(tx, callback) {
-    var txHex = tx.build().toHex();
+    var txHex = tx.tx.toHex();
     signTransactionHex(txHex, function(error, signedTxHex) {
       var signedTx = Bitcoin.TransactionBuilder.fromTransaction(Bitcoin.Transaction.fromHex(signedTxHex));
       callback(error, signedTx);
