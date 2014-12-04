@@ -66,34 +66,28 @@ var scanSingle = function(options, callback) {
   var allTransactions = [];
   var payloadDatum = [];
   var transactionTotal;
-  var getNextTransaction = function(txHash) {
-    if (!txHash) {
-      callback("missing: " + allTransactions.length + 1, false);
-      return;
-    }
-    getTransaction(txHash, function(err, tx) {
-      allTransactions.push(tx);
-      var payload = bitcoinTransactionBuilder.getPayloadsFromTransactions([tx])[0];
-      payloadDatum.push(payload.data);
-      if (allTransactions.length == transactionTotal) {
-        dataPayload.decode(payloadDatum, function(err, data) {
-          callback(err, data);
-        });
-      }
-      else {
-        var nextTxHash = tx.outputs[1].nextTxHash;
-        getNextTransaction(nextTxHash);
-      }
-    });
-  };
-  getTransaction(txHash, function(err, tx) {
+  var onTransaction = function(err, tx) {
     allTransactions.push(tx);
     var payload = bitcoinTransactionBuilder.getPayloadsFromTransactions([tx])[0];
     payloadDatum.push(payload.data);
-    transactionTotal = payload.length;
     var nextTxHash = tx.outputs[1].nextTxHash;
-    getNextTransaction(nextTxHash);
-  });
+    if (payload.length) {
+      transactionTotal = payload.length;
+    }
+    if (allTransactions.length == transactionTotal) {
+      dataPayload.decode(payloadDatum, function(err, data) {
+        callback(err, data);
+      });
+    }
+    else if (!nextTxHash) {
+      callback("missing: " + (allTransactions.length + 1), false);
+      return;
+    }
+    else {
+      getTransaction(nextTxHash, onTransaction);
+    }
+  };
+  getTransaction(txHash, onTransaction);
 };
 
 var scan = function(options, callback) {
