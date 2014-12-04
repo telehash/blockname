@@ -1,6 +1,6 @@
 {
   "name": "blockcast",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "A decentralized messaging application protocol for publishing to the Bitcoin blockchain.",
   "main": "./src/index.js",
   "scripts": {
