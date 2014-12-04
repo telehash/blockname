@@ -57,6 +57,7 @@ var getTips = function(options, callback) {
   transactions.forEach(function(tx) {
     var tip = {};
     var sources = [];
+    var value;
     tx.inputs.forEach(function(input) {
       var sourceAddress = input.address;
       if (sourceAddress) {
@@ -75,15 +76,20 @@ var getTips = function(options, callback) {
       }
       else if (output.type == 'pubkeyhash') {
         var destinationAddress = output.address;
+        if (!value || output.value < value) {
+          value = output.value;
+        }
         if (sources.indexOf(destinationAddress) < 0) {
           tip.tipDestinationAddress = destinationAddress;
           tip.tipAmount = output.value;
         }
       }
     });
-    if (tip.tipTransactionHash && tip.tipAmount && tip.tipDestinationAddress) {
-      tips.push(tip)
+    if (!tip.tipDestinationAddress && typeof(value) != "undefined") {
+      tip.tipDestinationAddress = sources[0];
+      tip.tipAmount = value;
     }
+    tips.push(tip)
   });
   callback(false, tips)
 };
