@@ -137,7 +137,16 @@ var scan = function(options, callback) {
 }
 
 var simplePost = function(options, callback) {
-  var data = new Buffer(options.message);
+  var data;
+  if (options.message) {
+    data = new Buffer(options.message);
+  }
+  else if (options.data) {
+    data = options.data;
+  }
+  else if (options.hexData) {
+    data = new Buffer(options.hexData, "hex");
+  }
   var privateKeyWIF = options.privateKeyWIF;
   var signTransaction = options.signTransaction;
   var signTransactionHex = options.signTransactionHex;
