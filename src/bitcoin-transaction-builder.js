@@ -6,11 +6,16 @@ var dataPayload = require("./data-payload");
 
 var loadAndSignTransaction = function(options, callback) {
   var tx = options.tx;
-  var unspent = options.unspent;
   var address = options.address;
-  var fee = options.fee || 1000;
-  tx.addInput(unspent.txHash, unspent.index);
-  tx.addOutput(address, unspent.value - fee);
+  var fee = options.fee;
+  var unspentOutputs = options.unspentOutputs;
+  var unspentValue = 0;
+  for (var i = unspentOutputs.length - 1; i >= 0; i--) {
+    var unspentOutput = unspentOutputs[i];
+    unspentValue += unspentOutput.value;
+    tx.addInput(unspentOutput.txHash, unspentOutput.index);
+  };
+  tx.addOutput(address, unspentValue - fee);
   options.signTransaction(tx, function(err, signedTx) {
     callback(false, signedTx);
   });
@@ -97,8 +102,8 @@ var createSignedTransactionsWithData = function(options, callback) {
   options.signTransaction = signTransaction;
   var data = options.data;
   var unspentOutputs = options.unspentOutputs;
-  var existingUnspent = unspentOutputs[0];
   var id = options.id;
+  var fee = options.fee || 1000;
   var address = options.address;
   var privateKeyWIF = options.privateKeyWIF;
   dataPayload.create({data: data, id: id}, function(err, payloads) {
@@ -107,6 +112,18 @@ var createSignedTransactionsWithData = function(options, callback) {
     var signedTransactionsCounter = 0;
     var payloadsLength = payloads.length;
     var txHash;
+
+    var totalCost = payloadsLength * fee;
+    var existingUnspents = [];
+    var unspentValue = 0;
+    for (var i = unspentOutputs.length - 1; i >= 0; i--) {
+      var unspentOutput = unspentOutputs[i];
+      unspentValue += unspentOutput.value;
+      existingUnspents.push(unspentOutput);
+      if (unspentValue >= totalCost) {
+        break;
+      }
+    };
 
     var signedTransactionResponse = function(err, signedTx) {
       var signedTxBuilt = signedTx.build();
@@ -134,8 +151,9 @@ var createSignedTransactionsWithData = function(options, callback) {
         };
 
         loadAndSignTransaction({
+          fee: fee,
           tx: tx,
-          unspent: unspent,
+          unspentOutputs: [unspent],
           address: address,
           signTransaction: options.signTransaction
         }, signedTransactionResponse);
@@ -145,8 +163,9 @@ var createSignedTransactionsWithData = function(options, callback) {
     var tx = createTransactionWithPayload(payloads[0]);
 
     loadAndSignTransaction({
+      fee: fee,
       tx: tx,
-      unspent: existingUnspent,
+      unspentOutputs: existingUnspents,
       address: address,
       signTransaction: options.signTransaction
     }, signedTransactionResponse);
