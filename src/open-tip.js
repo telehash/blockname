@@ -32,17 +32,24 @@ var createSignedTransaction = function(options, callback) {
   var data = new Buffer(headerHex + tipTransactionHash, "hex");
   var signTransaction = options.signTransaction || signFromTransactionHex(options.signTransactionHex) || signFromPrivateKeyWIF(options.privateKeyWIF);
   options.signTransaction = signTransaction;
-  var unspentOutputs = options.unspentOutputs;
-  var unspent = unspentOutputs[0];
   var address = options.address;
   var fee = options.fee || 1000;
   var privateKeyWIF = options.privateKeyWIF;
   var payloadScript = Bitcoin.Script.fromChunks([Bitcoin.opcodes.OP_RETURN, data]);
   var tx = new Bitcoin.TransactionBuilder();
+  var unspentOutputs = options.unspentOutputs;
+  var unspentValue = 0;
+  for (var i = unspentOutputs.length - 1; i >= 0; i--) {
+    var unspentOutput = unspentOutputs[i];
+    unspentValue += unspentOutput.value;
+    tx.addInput(unspentOutput.txHash, unspentOutput.index);
+    if (unspentValue - fee - tipAmount >= 0) {
+      break;
+    }
+  };
   tx.addOutput(payloadScript, 0);
-  tx.addInput(unspent.txHash, unspent.index);
   tx.addOutput(tipDestinationAddress, tipAmount);
-  tx.addOutput(address, unspent.value - fee - tipAmount);
+  tx.addOutput(address, unspentValue - fee - tipAmount);
   signTransaction(tx, function(err, signedTx) {
     var signedTxBuilt = signedTx.build();
     var signedTxHex = signedTxBuilt.toHex();
