@@ -1,7 +1,7 @@
 blockcast
 ===
 
-A decentralized messaging application protocol for publishing to the Bitcoin blockchain.
+A decentralized messaging application protocol for micropublishing to the Bitcoin blockchain.
 
 Publishing a document
 ---
@@ -108,12 +108,14 @@ How does it work?
 v0.0
 ---
 
-Documents are compressed using DEFLATE and then embedded across up to 16 Bitcoin transactions in OP_RETURN outputs along with custom headers allowing for documents no larger than 607 bytes.
+Documents are compressed using DEFLATE and then embedded across up to 16 Bitcoin transactions in OP_RETURN outputs along with custom headers allowing for documents no larger than 607 bytes. 
+
+This is enough space to contain a number of document digest formats, URIs and URNs. This allows for cross-platform content addressable systems such as Bittorrent and Venti.
 
 v0.1
 ---
 
-Documents are compressed using DEFLATE and then embedded in OP_RETURN outputs for a an unlimited document size.
+Documents will be compressed using DEFLATE and then embedded in OP_RETURN outputs for a an unlimited document size.
 However, the protocol enforces a geometric growth in transaction fees. This is intended to incentivize smaller document sizes.
 
 Why build a decentralized messaging application?
