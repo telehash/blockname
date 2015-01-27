@@ -1,7 +1,7 @@
-blockchain dns
-==============
+blockname - bitcoin dns cache
+=============================
 
-A blockchain-based DNS cache, use the blockchain as a backup cache for normal DNS resolution as well as to resolve alternative domains and TLDs.
+This is a simple bitcoin-based DNS cache, using the blockchain as a backup cache for normal DNS resolution as well as to resolve alternative domains and TLDs (completely distributed, no registrars).
 
 Simply publish your own domain name as a valid `OP_RETURN` output on *any* transaction with the format `*myname.com\01\02\03\04`, these are called `hint` transactions:
 
