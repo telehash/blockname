@@ -1,17 +1,17 @@
 blockchain dns
 ==============
 
-A blockchain-based DNS distributed cache.
+A blockchain-based DNS cache, use the blockchain as a backup cache for normal DNS resolution as well as to resolve alternative domains and TLDs.
 
-Simply publish your own domain name as a valid `OP_RETURN` output on any transaction with the format `*myname.com\01\02\03\04`, these are called `hint` transactions:
+Simply publish your own domain name as a valid `OP_RETURN` output on *any* transaction with the format `*myname.com\01\02\03\04`, these are called `hint` transactions:
 
-* first byte: `0x42`
-* up to 32 valid [domain name](http://en.wikipedia.org/wiki/Domain_name) characters
-* four octets of an IPv4 address to use as the next resolution server
+* first byte is always the dot character, `0x46` 
+* followed by up to 32 valid [domain name](http://en.wikipedia.org/wiki/Domain_name) characters
+* the last 4 bytes are the IPv4 address octets to use as the next resolution server
 
-The blockchain resolver will attempt to resolve all domains normally, and only when they fail will it use any names that come from the cache.
+The blockchain resolver will attempt to resolve all domains with traditional DNS, and only when they fail will it use any names that come from the cache hints.
 
-It will index all newly broadcast transactions that have a valid hints, storing only the unique hints that have the largest value transactions.
+In the background the resolver will continuously index all newly broadcast transactions that have a valid hints, storing only the unique hints that have the largest value transactions (larger inputs/outputs will replace smaller ones for the same domain name).
 
 -----------------
 
