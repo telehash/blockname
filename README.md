@@ -3,11 +3,11 @@ blockname - bitcoin dns cache
 
 This is a simple bitcoin-based DNS cache, using the blockchain as a backup cache for normal DNS resolution as well as to resolve alternative domains and TLDs (completely distributed, no registrars).
 
-Simply publish your own domain name as a valid `OP_RETURN` output on *any* transaction with the format `*myname.com\01\02\03\04`, these are called `hint` transactions:
+Simply publish your own domain name as a valid `OP_RETURN` output on *any* transaction with the text format `.myname.com11223344`, these are called `hint` transactions:
 
-* first byte is always the dot character, `0x46` 
-* followed by up to 32 valid [domain name](http://en.wikipedia.org/wiki/Domain_name) characters
-* the last 4 bytes are the IPv4 address octets to use as the next resolution server
+* first byte is always the dot character, `.` 
+* followed by up to 31 valid [domain name](http://en.wikipedia.org/wiki/Domain_name) characters
+* the last 8 characters are always the IPv4 address octets hex encoded, this address is used as the dns server to forward the query to
 
 The blockchain resolver will attempt to resolve all domains with traditional DNS, and only when they fail will it use any names that come from the cache hints.
 
