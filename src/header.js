@@ -3,7 +3,7 @@ var assert = require("assert");
 var nibble = require("./nibble");
 
 var VERSION = 0;
-var MAGIC_NUMBER = new Buffer("1f", "hex");
+var MAGIC_NUMBER = new Buffer("46", "hex"); // "."
 
 var encodeStart = function(options) {
   var magicNumber = MAGIC_NUMBER;
