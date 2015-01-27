@@ -1,7 +1,21 @@
-blockcast
-===
+blockchain dns
+==============
 
-A decentralized messaging application protocol for micropublishing to the Bitcoin blockchain.
+A blockchain-based DNS distributed cache.
+
+Simply publish your own domain name as a valid `OP_RETURN` output on any transaction with the format `*myname.com\01\02\03\04`, these are called `hint` transactions:
+
+* first byte: `0x42`
+* up to 32 valid [domain name](http://en.wikipedia.org/wiki/Domain_name) characters
+* four octets of an IPv4 address to use as the next resolution server
+
+The blockchain resolver will attempt to resolve all domains normally, and only when they fail will it use any names that come from the cache.
+
+It will index all newly broadcast transactions that have a valid hints, storing only the unique hints that have the largest value transactions.
+
+-----------------
+
+> WIP - experimenting w/ re-purposing the blockcast project
 
 Publishing a document
 ---
