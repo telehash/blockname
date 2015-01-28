@@ -30,8 +30,10 @@
   "dependencies": {
     "bitcoinjs-lib": "^1.2.0",
     "helloblock-js": "^0.2.5",
+    "ip": "^0.3.2",
+    "level-party": "^1.0.1",
     "native-dns": "^0.7.0",
-    "optimist": "~0.6.1",
-    "raw-op-return": "^0.1.1"
+    "raw-op-return": "^0.1.1",
+    "yargs": "^1.3.3"
   }
 }
