@@ -1,37 +1,37 @@
 {
-  "name": "blockcast",
-  "version": "0.0.15",
-  "description": "A decentralized messaging application protocol for publishing to the Bitcoin blockchain.",
+  "name": "blockname",
+  "version": "0.0.1",
+  "description": "A simple bitcoin-based DNS cache",
   "main": "./src/index.js",
   "scripts": {
-    "test": "./node_modules/.bin/jasmine-node test/ --forceexit --verbose --captureExceptions",
-    "test-dev": "./node_modules/.bin/jasmine-node test/ --verbose --autotest --captureExceptions --color --watch src/"
+    "test": "./node_modules/.bin/jasmine-node test/ --forceexit --verbose --captureExceptions"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/williamcotton/blockcast.git"
+    "url": "https://github.com/quartzjer/blockname.git"
   },
   "keywords": [
     "bitcoin",
     "blockchain",
-    "message",
+    "dns",
     "decentralized",
-    "social",
     "crypto",
     "cryptocurrency"
   ],
-  "author": "William Cotton",
+  "author": "Jeremie Miller",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/williamcotton/blockcast/issues"
+    "url": "https://github.com/quartzjer/blockname/issues"
   },
-  "homepage": "https://github.com/williamcotton/blockcast",
+  "homepage": "https://github.com/quartzjer/blockname",
   "devDependencies": {
-    "jasmine-node": "^1.14.5",
-    "helloblock-js": "^0.2.5"
+    "jasmine-node": "^1.14.5"
   },
   "dependencies": {
     "bitcoinjs-lib": "^1.2.0",
-    "native-dns": "^0.7.0"
+    "helloblock-js": "^0.2.5",
+    "native-dns": "^0.7.0",
+    "optimist": "~0.6.1",
+    "raw-op-return": "^0.1.1"
   }
 }
