@@ -2,9 +2,8 @@
   "name": "blockname",
   "version": "0.0.1",
   "description": "A simple bitcoin-based DNS cache",
-  "main": "./src/index.js",
+  "main": "./lib/index.js",
   "scripts": {
-    "test": "./node_modules/.bin/jasmine-node test/ --forceexit --verbose --captureExceptions"
   },
   "repository": {
     "type": "git",
@@ -25,7 +24,6 @@
   },
   "homepage": "https://github.com/quartzjer/blockname",
   "devDependencies": {
-    "jasmine-node": "^1.14.5"
   },
   "dependencies": {
     "bitcoinjs-lib": "^1.2.0",
