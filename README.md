@@ -15,7 +15,7 @@ In the background the resolver will continuously index all newly broadcast trans
 
 ## Status
 
-It is currently working on testnet and being tested/developed for the main blockchain, these commands are working but expect them to change.
+It is [currently working](http://testnet.coinsecrets.org/?to=320107.000001) on [testnet](http://blockexplorer.com/testnet/tx/6b6ea2fffa1ad59dc0eb716bf2a8386fe091eb180486e38c9e4a6c7458ec00fa) and being tested/developed for the main blockchain, these commands are working but expect them to change.
 
 ```
 git clone https://github.com/quartzjer/blockname.git
