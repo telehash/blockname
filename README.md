@@ -13,104 +13,46 @@ The blockchain resolver will attempt to resolve all domains with traditional DNS
 
 In the background the resolver will continuously index all newly broadcast transactions that have a valid hints, storing only the unique hints that have the largest value transactions (larger inputs/outputs will replace smaller ones for the same domain name).
 
------------------
+## Status
 
-> WIP - experimenting w/ re-purposing the [blockcast project](https://github.com/williamcotton/blockcast)
-
-Publishing a hint
----
-
-These examples use the helloblock test faucet to get a private key, public address and unspent outputs.
-
-```javascript
-var helloblock = require("helloblock-js")({
-  network: 'testnet'
-});
-
-helloblock.faucet.get(1, function(err, res, body) {
-
-  var privateKeyWIF = body.privateKeyWIF;
-  var address = body.address;
-  var unspentOutputs = body.unspents;
-  
-  // ...
-  
-});
-```
-
-Signing a hint:
-```javascript
-var signFromPrivateKeyWIF = function(privateKeyWIF) {
-  return function(tx, callback) {
-    var key = Bitcoin.ECKey.fromWIF(privateKeyWIF);
-    tx.sign(0, key); 
-    callback(false, tx);
-  }
-};
-var signTransaction = signFromPrivateKeyWIF(privateKeyWIF);
-```
-
-Propagating a hint:
-```javascript
-var propagateTransaction = function(tx, callback) {
-  helloblock.transactions.propagate(tx, function(err, res, body) {
-    callback(err, res);
-  });
-};
-```
-
-Looking up and parsing hints:
-```javascript
-var getTransaction = function(txHash, callback) {
-  helloblock.transactions.get(txHash, function(err, res, tx) {
-    callback(err, tx);
-  });
-};
-```
-
-And finally ready to broadcast.
-
-```javascript
-blockname.post({
-  domain: "jeremie.com",
-  ip: "208.68.163.244"
-  address: address,
-  unspentOutputs: unspentOutputs,
-  propagateTransaction: propagateTransaction,
-  signTransaction: signTransaction
-}, function(error, response) {
-  console.log(response);
-});
-```
-
-Scanning for all hints in a block
----
-
-All we'll need is a list of Bitcoin transactions and we'll get back a list of hints.
-
-```javascript
-helloblock.blocks.getTransactions(307068 , {limit: 100}, function(err, res, transactions) {
-  blockcast.scan({
-    transactions: transactions
-  }, function(err, hints) {
-    console.log(hints);
-  });
-});
-```
-
-Scan for a hint in a single transaction
----
-
-Can also provide the transaction hash from the first transaction's payload.
-
-```javascript
-blockcast.scanSingle({
-  txHash: firstTxHash,
-  getTransaction: getTransaction
-}, function(err, hint) {
-  console.log(hint);
-});
+It is currently working on testnet and being tested/developed for the main blockchain, these commands are working but expect them to change.
 
 ```
+git clone https://github.com/quartzjer/blockname.git
+cd blockname
+npm install
+```
 
+Start a local DNS resolver (defaults to port `8053`)
 
+```
+node bin/serve.js
+```
+
+Start a process to sync and monitor the transactions on the blockchain:
+
+```
+node bin/scan.js
+```
+
+Register your own domain name hint on the blockchain, passing the domain and the IP address of a nameserver that will resolve it or the IP to return to any `A` queries.  Uses a testnet faucet service by default, may also pass an existing source transaction and destination address to refund to (run command w/ no args to see options)
+
+```
+node bin/register.js "somename.tld" 12.34.56.78
+```
+
+Now do a test resolution to the local cache server, it will check normal DNS first, then fallback to any indexed hints from the blockchain:
+
+```
+dig somename.tld @127.0.0.1 -p 8053
+```
+
+## Plans
+
+After some more testing and docs, this will default to mainnet and become a `blocknamed` DNS resolver service and `blockname` registration command that anyone can `npm install -g blockname`.
+
+After some more usage there will be a list of public blockname resolvers that can be used by anyone and a web-based registration tool and a chart of top hints in the blockchain.
+
+## Thanks
+
+Thanks to help from [William Cotton](https://github.com/williamcotton/blockcast).
