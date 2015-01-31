@@ -3,15 +3,30 @@ blockname - bitcoin dns cache
 
 This is a simple bitcoin-based DNS cache, using the blockchain as a backup cache for normal DNS resolution as well as to resolve alternative domains and TLDs (completely distributed, no registrars).
 
-Simply publish your own domain name as a valid `OP_RETURN` output on *any* transaction with the text format `.myname.com11223344`, these are called `hint` transactions:
+Simply publish your own domain name as a valid `OP_RETURN` output on *any* transaction with the text format `*.myname.com11223344`, these are called `hint` transactions:
 
-* first byte is always the dot character, `.` 
-* followed by up to 31 valid [domain name](http://en.wikipedia.org/wiki/Domain_name) characters
-* the last 8 characters are always the IPv4 address octets hex encoded, this address is used as the dns server to forward the query to
+* first byte is always the star character: `*` 
+* for textual domain name hints, the second byte is always the dot character: `.`
+  * followed by up to 30 valid [domain name](http://en.wikipedia.org/wiki/Domain_name) characters
+  * the last 8 characters are always the IPv4 address octets hex encoded, this address is used as the dns server to forward the query to
+* for binary hashname hints, the second byte is always the hash character: `#`
+  * followed by 32 bytes of the hashname
+  * followed by 4 bytes of the IPv4 address
+  * followed by 2 bytes of the port
 
 The blockchain resolver will attempt to resolve all domains with traditional DNS, and only when they fail will it use any names that come from the cache hints.
 
 In the background the resolver will continuously index all newly broadcast transactions that have a valid hints, storing only the unique hints that have the largest value transactions (larger inputs/outputs will replace smaller ones for the same domain name).
+
+Hashnames are only resolved with a `.public` TLD and are always validated before being used.
+
+## DHT Index
+
+In order to not require every resolver to keep an index of every hint in the blockchain they may connect to a common DHT based on [Kademlia](https://en.wikipedia.org/wiki/Kademlia) and [telehash](http://telehash.org).  Unknown queries may ask peer resolvers on the DHT for hints and their transaction IDs so that they can be independently/locally verified.
+
+Upon being cached from a verified DHT hint the local resolver must monitor new transactions for updates as long as the hint is cached.
+
+> WIP, merging [dotPublic](https://github.com/telehash/dotPublic) into here
 
 ## Status
 
