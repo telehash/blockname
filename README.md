@@ -7,12 +7,29 @@ Simply publish your own domain name as a valid `OP_RETURN` output on *any* trans
 
 * first byte is always the star character: `*` 
 * for textual domain name hints, the second byte is always the dot character: `.`
-  * followed by up to 30 valid [domain name](http://en.wikipedia.org/wiki/Domain_name) characters
-  * the last 8 characters are always the IPv4 address octets hex encoded, this address is used as the dns server to forward the query to
-* for binary hashname hints, the second byte is always the hash character: `#`
-  * followed by 32 bytes of the hashname
-  * followed by 4 bytes of the IPv4 address
-  * followed by 2 bytes of the port
+  * followed by up to 26 valid [domain name](http://en.wikipedia.org/wiki/Domain_name) characters
+  * followed by a required 8 characters that are always the IPv4 address octets hex encoded, this address is used as the dns server to forward the query to
+  * followed by a required 4 digits that are the port of the dns server (left zero padded)
+* for exact hostname hints, the second byte is alphanumeric ([a-z] or [0-9])
+  * followed by up to 30 valid domain name characters
+  * followed by a required 8 characters of the IPv4 address
+* for hashname hints, the second byte is always the hash character: `#`
+  * followed by 32 bytes of the hashname (binary)
+  * followed by 4 bytes of the IPv4 address (binary)
+  * followed by 2 bytes of the port (binary)
+  * `.hashname` special TLD to map from normal DNS (base32 of the 32 bytes)
+  * verifies hashname before responding
+* for bitcoin address hints, the second byte is `$`
+  * followed by 20 bytes of the public key (binary)
+  * followed by 4 bytes of the IPv4 address (binary)
+  * followed by 2 bytes of the port (binary)
+  * `.address` special TLD to map from normal DNS (base58check)
+  * verifies via the transaction
+* for the hash160 of anything, the second byte is a space character ` `
+ * followed by 20 bytes of the hash160 value
+ * followed by 4 bytes of the IPv4 address
+ * `.hash` special TLD (base32 of the 32 byte sha256 hash)
+
 
 The blockchain resolver will attempt to resolve all domains with traditional DNS, and only when they fail will it use any names that come from the cache hints.
 
