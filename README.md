@@ -3,60 +3,92 @@ blockname - bitcoin dns cache
 
 This is a simple bitcoin-based DNS cache, using the blockchain as a backup cache for normal DNS resolution as well as to resolve alternative domains and TLDs (completely distributed, no registrars).
 
-Simply publish your own domain name as a valid `OP_RETURN` output on *any* transaction with the text format `*.myname.com11223344`, these are called `hint` transactions and the first byte is always the star character (`*`).
+Simply publish your own domain name as a valid `OP_RETURN` output on *any* transaction with the text format `*myname.com11223344`, these are called `hint` transactions and the first byte is always the star character (`*`).
 
-There are two forms of hints, text and binary.  The text hints can be registered with any wallet software that can include an `OP_RETURN` output on a transaction, and are the only hints that can act as a fallback/cache for *any* domain name.  The binary hints require additional rules for registration and validation during resolution, and only work for as a fallback for normal DNS requests via custom TLDs.
+The blockname resolver will attempt to resolve all domains with traditional DNS, and only when they fail will it use any names that come from the cache hints.
 
-## Domain Hints (text)
+In the background the resolver will continuously index all newly broadcast transactions that have a valid hints, storing only the unique hints that have the largest value transactions (larger sum values of the outputs on the transaction will replace smaller ones for the same name).
 
- * for textual domain name hints, the second byte is always the dot character: `.`
-  * followed by up to 26 valid [domain name](http://en.wikipedia.org/wiki/Domain_name) characters
-  * followed by a required 8 characters that are always the IPv4 address octets hex encoded, this address is used as the dns server to forward the query to
-  * followed by a required 4 characters that are the port of the dns server in hex (network byte order uint16_t)
+There are two forms of hints, text and binary.  The text hints can be registered with any wallet software that can include an `OP_RETURN` output on a transaction, and are the only hints that can act as a fallback/cache for *any* domain name.  The binary hints require additional rules for registration and resolution validation, and only work for as a fallback for normal DNS requests via custom TLDs.
+
+Public resolvers may also advertise their existence to each other via binary hints and build a distributed hashtable (DHT) index from those advertisements. The DHT index is then used to dynamically resolve any names that did not have a hint in the blockchain, allowing for ephemeral registrations that do not require a transaction.
+
+## Name Server Hints (text)
+
+Textual Name-Server (NS) hints are used to match one or more given queries to an included IP and port.  Any DNS query including or matching the suffix/domain will be sent to the specified IP:port and any answers returned verbatim and cached.
+
+* any OP_RETURN starting with `*.`
+* followed by up to 26 valid [domain name](http://en.wikipedia.org/wiki/Domain_name) characters that must include at least two labels (name.tld)
+* followed by a required 8 characters that are always the IPv4 address octets hex encoded, this address is used as the dns server to forward the query to
+* followed by a required 4 characters that are the port of the DNS server in hex (network byte order uint16_t)
+
+Examples:
+
+* `domain.tld` NS `192.168.0.1:53` => hint `*.domain.tldc0a800010035`
+* `test.name` NS `1.2.3.4:1286` => hint `*.test.name010203040506`
+* `jeremie.com` NS `208.68.163.251:53` => hint `*.jeremie.comd044a3fb0035`
+
 
 ## Hostname Hints (text)
 
-Any matching domain hints are authorative, hostname hints are only used when there is no domain hint.
+A hostname hint is a direct mapping of an exact hostname to an IP address, no additional queries are done and an answer is returned immediately to the query.  Any matching domain hints are authorative and checked first, hostname hints are only used when there is no domain hint.
 
-* for exact hostname hints, the second byte is alphanumeric ([a-z] or [0-9])
-  * followed by up to 30 valid domain name characters
-  * followed by a required 8 characters of the IPv4 address
+* Any OP_RETURN starting with `*` where the second byte is alphanumeric ([a-z] or [0-9])
+* followed by up to 30 valid domain name characters with any number of labels
+* followed by a required 8 characters of the IPv4 address in hex
+
+Examples:
+
+* `test.domain.tld` A `192.168.0.1` => hint `*test.domain.tldc0a80001`
+* `test.name` A `1.2.3.4` => hint `*test.name01020304`
+* `some.host.jeremie.com` A `208.68.163.251` => hint `*some.host.jeremie.comd044a3fb`
 
 ## Hashname Hints (binary)
 
-* for hashname hints, the second byte is always the hash character: `#`
-  * followed by 32 bytes of the hashname (binary)
-  * followed by 4 bytes of the IPv4 address (binary)
-  * followed by 2 bytes of the port (binary)
-  * `.public` special TLD to map from normal DNS (base32 of the 32 bytes)
-  * verifies hashname before responding
+A [hashname](https://github.com/telehash/telehash.org/tree/master/v3/hashname) hint enables any [telehash](http://telehash.org) based service to associate itself publicly with a known stable network location.  They should only be used for services that are intended to be public (web servers, etc), private devices and ephemeral network addresses should not be published in the blockchain.
+
+* any OP_RETURN starting with `*#`
+* followed by 32 bytes of the hashname (binary)
+* followed by 4 bytes of the IPv4 address (binary)
+* followed by 2 bytes of the port (binary, network order uint16_t)
+
+The string encoding of a hashname (base32 of the 32 bytes) may be combined with the special `.public` TLD to enable regular DNS queries to resolve hashnames, for example `4w0fh69ad6d1xhncwwd1020tqnhqm4y5zbdmtqdk7d3v36qk6wbg.public`.
+
+All hashname lookups are verified against the given IP and port with a handshake to ensure authenticity before returning their information to any queries.
 
 ## Bitcoin Address Hints (binary)
 
-* for bitcoin address hints, the second byte is `$`
-  * followed by 20 bytes of the public key (binary)
-  * followed by 4 bytes of the IPv4 address (binary)
-  * followed by 2 bytes of the port (binary)
-  * `.address` special TLD to map from normal DNS (base58check)
-  * verifies via the transaction
+Any bitcoin address that is a public key (starts with `1`) can be resolved and verified by blockname.
+
+* any OP_RETURN starting with `*#`
+* followed by 20 bytes of the public key (binary)
+* followed by 4 bytes of the IPv4 address (binary)
+* followed by 2 bytes of the port (binary, network order uint16_t)
+
+The given IP:port must be issued a verification challenge and return a signed message (format to be defined) before returning their information to any queries.
+
+While the base58 string encoding of a bitcoin address is regularly used and would be optimal for mapping to a special TLD, normal DNS is case-insensitive and some DNS tools may not support the case-sensitive base58 encoding.  In practice most DNS resolution libraries will just pass the queried hostname verbatim through to the resolver/server and the address will be preserved, so using a special TLD of `.address` often works when mapping from normal DNS.  When possible, the address may be converted from base58 to base32 before sending to a blockname resolver via DNS.
 
 ## Generic Hash hints (binary)
 
-* for the hash160 of anything, the second byte is a space character ` `
- * followed by 20 bytes of the hash160 value
- * followed by 4 bytes of the IPv4 address
- * `.hash` special TLD (base32 of the 32 byte sha256 hash)
+A blockname resolver will also support any generic hash160-based (RIPEMD-160 hashing on the result of SHA-256) queries where they do not understand how to verify the authenticity of the results.  Applications using this should be careful to have an independent mechanism to verify the results are valid when being used programmatically.
 
+* any OP_RETURN starting with `* ` (space character)
+* followed by 20 bytes of the hash160 value
+* followed by 4 bytes of the IPv4 address
+* followed by an optional 14 bytes of application payload
 
-The blockchain resolver will attempt to resolve all domains with traditional DNS, and only when they fail will it use any names that come from the cache hints.
+When mapping incoming normal DNS queries to generic hash hints, the special `.hash` TLD is used with base32 of the 32 byte SHA-256 result.  This allows the source of the hash to not be known until query-time. When doing this mapping to normal DNS the blockname resolver can only return un-verified A records to the IP address.
 
-In the background the resolver will continuously index all newly broadcast transactions that have a valid hints, storing only the unique hints that have the largest value transactions (larger inputs/outputs will replace smaller ones for the same domain name).
+## DHT Hints (binary)
 
-Hashnames are only resolved with a `.public` TLD and are always validated before being used.
+A DHT hint is identical to the hashname hint but uses the `*!` prefix with the same 32-byte + 4-byte + 2-byte binary payload.  The hashnames in these hints are signalling that they are part of the blockname DHT that will provide a fallback resolution for ephemeral and non-published hints not included in a transaction/OP_RETURN.
 
-## DHT Index
+Every DHT hint is indexed by the blockname resolver as a hashtable structured to find the closest nodes based on the result of any SHA-256 hash.  Any incoming queries that have not been resolved via the blockchain index are forwarded to the closest three active nodes on the DHT via telehash, and any hints returned are processed like normal.
 
-Resolvers index hashname hints as a common DHT based on [Kademlia](https://en.wikipedia.org/wiki/Kademlia) and [telehash](http://telehash.org).  Unknown queries may ask peer resolvers on the DHT for hints and their transaction IDs so that they can be independently/locally verified.
+Anyone may register these ephemeral hints to any of the DHT nodes by sending the hint via a telehash message (specifics to be defined) at regular intervals, as the nodes will expire them automatically and only store them in memory.
+
+Even though the hints are not stored permanently on the blockchain, sharing them with un-trusted nodes on the DHT is still putting them in the public domain and there is no assurance of privacy or that they will not be recorded.  They may be registered via systems like Tor and I2P, but the information in the hint itself (the name and mapped IP address) will still be public.
 
 Upon being cached from a verified DHT hint the local resolver must monitor new transactions for updates as long as the hint is cached.
 

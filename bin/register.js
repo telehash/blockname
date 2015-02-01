@@ -7,15 +7,19 @@ var yargs = require('yargs')
   .describe('db','hint storage db directory')
   .describe('key','WIF format secret key to use for the registration transaction')
   .boolean('test').describe('test','use a testnet faucet to fund the registration').default('test',true)
-  .usage('Usage: $0 "domain" 1.2.3.4 "txid" "refundto"')
+  .usage('Usage: $0 "domain" 1.2.3.4:5678 "txid" "refundto"')
   .demand(2);
 var argv = yargs.argv;
 
 var domain = argv._[0];
-try { var server = ip.toBuffer(argv._[1]); }catch(E){}
+var ipp = argv._[1].split(':');
+var port = parseInt(ipp[1]) || 53;
+var pbuf = new Buffer(2);
+pbuf.writeUInt16BE(port,0);
+try { var server = ip.toBuffer(ipp[0]); }catch(E){}
 if(!server || server.length != 4) return console.error("bad ip address",argv._[1]);
 
-var hint = "."+domain+server.toString("hex");
+var hint = "*."+domain+server.toString("hex")+pbuf.toString("hex");
 if(hint.length > 40) return console.error("hint too large, domain must be <32 chars:",hint);
 
 var network = argv.test?"testnet":"mainnet";
