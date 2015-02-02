@@ -86,9 +86,9 @@ A DHT hint is identical to the hashname hint but uses the `*!` prefix with the s
 
 Every DHT hint is indexed by the blockname resolver as a hashtable structured to find the closest nodes based on the result of any SHA-256 hash.  Any incoming queries that have not been resolved via the blockchain index are forwarded to the closest three active nodes on the DHT via telehash, and any hints returned are processed like normal.
 
-Anyone may register these ephemeral hints to any of the DHT nodes by sending the hint via a telehash message (specifics to be defined) at regular intervals, as the nodes will expire them automatically and only store them in memory.
+Anyone may register these ephemeral hints to any of the DHT nodes by sending the hint via telehash (specifics to be defined).
 
-Even though the hints are not stored permanently on the blockchain, sharing them with un-trusted nodes on the DHT is still putting them in the public domain and there is no assurance of privacy or that they will not be recorded.  They may be registered via systems like Tor and I2P, but the information in the hint itself (the name and mapped IP address) will still be public.
+Even though the hints are not stored permanently on the blockchain, sharing them with un-trusted nodes on the DHT is still putting them in the public domain and there is no assurance of privacy.  They may be registered via systems like Tor and I2P, but the information in the hint itself (the name and mapped IP address) will still be public.
 
 Upon being cached from a verified DHT hint the local resolver must monitor new transactions for updates as long as the hint is cached.
 
