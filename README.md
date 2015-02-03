@@ -96,7 +96,9 @@ Upon being cached from a verified DHT hint the local resolver must monitor new t
 
 ## Status
 
-It is [currently working](http://testnet.coinsecrets.org/?to=320107.000001) on [testnet](http://blockexplorer.com/testnet/tx/6b6ea2fffa1ad59dc0eb716bf2a8386fe091eb180486e38c9e4a6c7458ec00fa) and being tested/developed for the main blockchain, these commands are working but expect them to change.
+It is [currently working](http://testnet.coinsecrets.org/?to=320107.000001) on testnet ([NS hint](http://blockexplorer.com/testnet/tx/e38b50187a202bf1042518aaaa3704d53665cbd44cc6732ffe6018327f9d1cb2) and [hostname hint](http://blockexplorer.com/testnet/tx/049a2873f207c466f68fd94c8edbac58571979b1fbde4cb7607659ba9ccaeb13)), and being tested/developed for the main blockchain.
+
+These commands are working but expect them to change:
 
 ```
 git clone https://github.com/quartzjer/blockname.git
@@ -110,13 +112,13 @@ Start a local DNS resolver (defaults to port `8053`)
 node bin/serve.js
 ```
 
-Start a process to sync and monitor the transactions on the blockchain:
+Start a process to sync and monitor the transactions on the (testnet) blockchain:
 
 ```
 node bin/scan.js
 ```
 
-Register your own domain name hint on the blockchain, passing the domain and the IP address of a nameserver that will resolve it or the IP to return to any `A` queries.  Uses a testnet faucet service by default, may also pass an existing source transaction and destination address to refund to (run command w/ no args to see options)
+Register your own hint on the blockchain, passing the hostname and an IP to resolve any `A` queries, or a domain and IP:port of a nameserver that will resolve that whole domain.  Uses a testnet faucet service by default currently, may also pass an existing source transaction and destination address to refund to (run command w/ no args to see options)
 
 ```
 node bin/register.js "somename.tld" 12.34.56.78

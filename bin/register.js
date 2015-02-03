@@ -13,13 +13,20 @@ var argv = yargs.argv;
 
 var domain = argv._[0];
 var ipp = argv._[1].split(':');
-var port = parseInt(ipp[1]) || 53;
-var pbuf = new Buffer(2);
-pbuf.writeUInt16BE(port,0);
 try { var server = ip.toBuffer(ipp[0]); }catch(E){}
 if(!server || server.length != 4) return console.error("bad ip address",argv._[1]);
 
-var hint = "*."+domain+server.toString("hex")+pbuf.toString("hex");
+// check for optional port to register a NS hint
+if(ipp.length > 1)
+{
+  var port = parseInt(ipp[1]) || 53;
+  var ns = new Buffer(2);
+  ns.writeUInt16BE(port,0);
+  var hint = "*."+domain+server.toString("hex")+ns.toString("hex");
+}else{
+  var hint = "*"+domain+server.toString("hex");
+}
+
 if(hint.length > 40) return console.error("hint too large, domain must be <32 chars:",hint);
 
 var network = argv.test?"testnet":"mainnet";

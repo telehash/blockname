@@ -16,18 +16,37 @@ var db = level(dbdir, { encoding: 'json' });
 console.log("resolving dns requests at",argv.port,"with hints from",dbdir);
 
 // check for suffix match first (recursion)
-function findhint(name, cbHint)
+function getNS(name, cbHint)
 {
   var dot = name.indexOf('.');
   // hit bottom
   if(dot < 0) return cbHint(false);
   // descend down suffixes first
-  cbHint(name.substr(dot+1), function(err, hint){
+  getNS(name.substr(dot+1), function(err, hint){
     // found a lower level suffix hint already
     if(hint) return cbHint(false, hint);
-    // go find a hint for the current name
+    // go find a NS hint (with port) for the current name
+    db.get(name, function(err, hint){
+      cbHint(err, hint && hint.port);
+    });
+  });
+}
+
+// find any hint
+function getHint(name, cbHint)
+{
+  // paranoid sanity
+  name = name.toLowerCase();
+  if(name.substr(name.length-1) == '.') name = name.substr(0,name.length-1)
+
+  // first try to get any NS matching one
+  getNS(name, function(err, hint){
+    if(hint) return cbHint(false, hint);
+    
+    // fallback get any exact match
     db.get(name, cbHint);
   });
+  
 }
 
 server.on('request', function (request, response) {
@@ -54,23 +73,27 @@ server.on('request', function (request, response) {
   });
 
   req.on('end', function () {
-    if(ok) return;
+    if(ok) return console.log('ok',q.name);
 
     // now check for a hint to use as the nameserver
-    findhint(q.name, function(err, hint){
-      if(err || !hint || !hint.ip) return response.send();
+    getHint(q.name, function(err, hint){
+      if(err || !hint || !hint.ip)
+      {
+        console.log('xx',q.name);
+        return response.send();
+      }
 
       
       // any direct hints don't have a port
       if(!hint.port)
       {
-        console.log("found hostname hint",q.name,hint);
+        console.log("hn",q.name,hint);
         response.answer.push(dns.A({name: q.name, address: hint.ip, ttl: 60}));
         response.send();
         return;
       }
 
-      console.log("found nameserver hint, asking it",q.name,hint);
+      console.log("ns",q.name,hint);
       var req = dns.Request({
         question: q,
         server: { address: hint.ip, port: hint.port, type: 'udp' },
