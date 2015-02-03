@@ -15,6 +15,21 @@ var db = level(dbdir, { encoding: 'json' });
 
 console.log("resolving dns requests at",argv.port,"with hints from",dbdir);
 
+// check for suffix match first (recursion)
+function findhint(name, cbHint)
+{
+  var dot = name.indexOf('.');
+  // hit bottom
+  if(dot < 0) return cbHint(false);
+  // descend down suffixes first
+  cbHint(name.substr(dot+1), function(err, hint){
+    // found a lower level suffix hint already
+    if(hint) return cbHint(false, hint);
+    // go find a hint for the current name
+    db.get(name, cbHint);
+  });
+}
+
 server.on('request', function (request, response) {
   if(!Array.isArray(request.question) || request.question.length == 0) return;
   if(!dns.platform.name_servers.length) return console.log('no local name servers?');
@@ -42,33 +57,34 @@ server.on('request', function (request, response) {
     if(ok) return;
 
     // now check for a hint to use as the nameserver
-    db.get(q.name, function(err, hint){
+    findhint(q.name, function(err, hint){
       if(err || !hint || !hint.ip) return response.send();
 
-      console.log("using hint for",q.name,hint);
+      
+      // any direct hints don't have a port
+      if(!hint.port)
+      {
+        console.log("found hostname hint",q.name,hint);
+        response.answer.push(dns.A({name: q.name, address: hint.ip, ttl: 60}));
+        response.send();
+        return;
+      }
+
+      console.log("found nameserver hint, asking it",q.name,hint);
       var req = dns.Request({
         question: q,
-        server: { address: hint.ip, port: 53, type: 'udp' },
+        server: { address: hint.ip, port: hint.port, type: 'udp' },
         timeout: 2000
       });
 
-      var ok = false;
       req.on('message', function (err, answer) {
         if(err || answer.answer.length == 0) return;
-        ok = true;
         answer.answer.forEach(function (a) {
           response.answer.push(a);
         });
-        response.send();
       });
 
       req.on('end', function () {
-          // instead of no response, return a temporary generic A
-        if(!ok) response.answer.push(dns.A({
-          name: q.name,
-          address: hint.ip,
-          ttl: 60
-        }));
         response.send();
       });
       

@@ -35,7 +35,25 @@ function getBlock()
     transactions.forEach(function(tx){
       opret.scan(tx, function(err, dtx) {
         if(!dtx || !dtx.data) return;
-        if(dtx.data.length < 10 || dtx.data[0] != 46) return;
+        
+        // first character '*'
+        if(dtx.data.length < 10 || dtx.data[0] != 42) return;
+
+        var type = dtx.data[1];
+        console.log('found possible hint',type,dtx.data.slice(2).toString('hex'));
+        
+        // second character '.' is nameserver hint
+        if(type == 46)
+        {
+          
+        }
+        
+        // second character alpha is hostname hint
+        if((type > 96 && type < 123))
+        {
+          
+        }
+
         var domain = dtx.data.slice(1,dtx.data.length-8).toString();
         var server = new Buffer(dtx.data.slice(domain.length+1).toString(),'hex');
         var v = tx.totalInputsValue;
