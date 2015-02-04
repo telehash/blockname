@@ -95,7 +95,7 @@ function getBlock()
         // second character alpha is hostname hint, ip only
         if((type > 96 && type < 123))
         {
-          var host = opreturn.slice(2,opreturn.length-8).toString();
+          var host = opreturn.slice(1,opreturn.length-8).toString();
           var iphex = opreturn.slice(opreturn.length-8).toString();
           var ipbuf = new Buffer(iphex,'hex');
           if(ipbuf.length != 4) return console.log('invalid ip hex');
