@@ -1,7 +1,6 @@
-blockname - bitcoin dns cache
-=============================
+# blockname - A blockchain and DHT backed DNS cache
 
-This is a simple bitcoin-based DNS cache, using the blockchain as a backup cache for normal DNS resolution as well as to resolve alternative domains and TLDs (completely distributed, no registrars).
+This is a simple bitcoin and telehash based DNS cache, using the blockchain as a backup cache for normal DNS resolution as well as to resolve alternative domains and TLDs (completely distributed, no registrars), and a DHT secured with telehash for off-blockchain dynamic resolutions.
 
 Simply publish your own domain name as a valid `OP_RETURN` output on *any* transaction with the text format `*myname.com11223344`, these are called `hint` transactions and the first byte is always the star character (`*`).
 
