@@ -7,12 +7,12 @@ var argv = require('yargs')
 
 // start from a default recent block on the right network
 var id = argv.block;
-if(!id) id = argv.test?320025:340853;
-var network = argv.test?"testnet":"mainnet";
+if(!id) id = argv.test?321916:340853;
+var network = argv.test?'testnet':'mainnet';
 var dbdir = argv.db || (__dirname + '/db');
 
 
-var helloblock = require("helloblock-js")({network:network});
+var helloblock = require('helloblock-js')({network:network});
 var opret = require('raw-op-return');
 var ip = require('ip');
 var level = require('level-party');
@@ -34,7 +34,7 @@ if(argv.list)
   return;
 }
 
-console.log("starting to scan for hints from",network,"at block",id,"into",dbdir);
+console.log('starting to scan for hints from',network,'at block',id,'into',dbdir);
 
 function setHint(name, hint)
 {
@@ -42,7 +42,7 @@ function setHint(name, hint)
     if(existing)
     {
       if(hint.ip == existing.ip && hint.v == existing.v) return; // ignore duplicate
-      if(hint.v < existing.v) return console.log("existing better hint",domain,existing);
+      if(hint.v < existing.v) return console.log('existing better hint',domain,existing);
     }
     console.log('saving new hint', name, hint);
     db.put(name, hint);
@@ -55,7 +55,7 @@ function getBlock()
   helloblock.blocks.getTransactions(id , {limit: 1000}, function(err, res, transactions){
     if(!Array.isArray(transactions) || transactions.length == 0)
     {
-      console.log("waiting for block",id);
+      console.log('waiting for block',id);
       setTimeout(getBlock,10*1000);
       return;
     }

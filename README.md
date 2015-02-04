@@ -96,7 +96,7 @@ Upon being cached from a verified DHT hint the local resolver must monitor new t
 
 ## Status
 
-It is [currently working](http://testnet.coinsecrets.org/?to=320107.000001) on testnet ([NS hint](http://blockexplorer.com/testnet/tx/e38b50187a202bf1042518aaaa3704d53665cbd44cc6732ffe6018327f9d1cb2) and [hostname hint](http://blockexplorer.com/testnet/tx/049a2873f207c466f68fd94c8edbac58571979b1fbde4cb7607659ba9ccaeb13)), and being tested/developed for the main blockchain.
+It is [currently working](http://testnet.coinsecrets.org/?to=321916.000001) on testnet ([NS hint](http://blockexplorer.com/testnet/tx/e38b50187a202bf1042518aaaa3704d53665cbd44cc6732ffe6018327f9d1cb2) and [hostname hint](http://blockexplorer.com/testnet/tx/049a2873f207c466f68fd94c8edbac58571979b1fbde4cb7607659ba9ccaeb13)), and being tested/developed for the main blockchain.
 
 These commands are working but expect them to change:
 

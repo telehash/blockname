@@ -13,7 +13,7 @@ var server = dns.createServer();
 var level = require('level-party');
 var db = level(dbdir, { encoding: 'json' });
 
-console.log("resolving dns requests at",argv.port,"with hints from",dbdir);
+console.log('resolving dns requests at',argv.port,'with hints from',dbdir);
 
 // check for suffix match first (recursion)
 function getNS(name, cbHint)
@@ -87,13 +87,13 @@ server.on('request', function (request, response) {
       // any direct hints don't have a port
       if(!hint.port)
       {
-        console.log("hn",q.name,hint);
+        console.log('hn',q.name,hint);
         response.answer.push(dns.A({name: q.name, address: hint.ip, ttl: 60}));
         response.send();
         return;
       }
 
-      console.log("ns",q.name,hint);
+      console.log('ns',q.name,hint);
       var req = dns.Request({
         question: q,
         server: { address: hint.ip, port: hint.port, type: 'udp' },
