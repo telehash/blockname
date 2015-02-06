@@ -6,7 +6,7 @@ Simply publish your own domain name as a valid `OP_RETURN` output on *any* trans
 
 The blockname resolver will attempt to resolve all domains with traditional DNS, and only when they fail will it use any names that come from the cache hints.
 
-In the background the resolver will continuously index all newly broadcast transactions that have a valid hints, storing only the unique hints that have the largest value transactions (larger sum values of the outputs on the transaction will replace smaller ones for the same name).
+In the background the resolver will continuously index all newly broadcast transactions that have a valid hints, storing only the unique hints that have the largest value transactions.  Both the burned value of the hint output *and* the total sum values of all the outputs on the transaction must be larger for the new hint to replace a previous one of the same name.
 
 There are two forms of hints, text and binary.  The text hints can be registered with any wallet software that can include an `OP_RETURN` output on a transaction, and are the only hints that can act as a fallback/cache for *any* domain name.  The binary hints require additional rules for registration and resolution validation, and only work for as a fallback for normal DNS requests via custom TLDs.
 
