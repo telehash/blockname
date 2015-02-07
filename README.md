@@ -12,26 +12,30 @@ There are two forms of hints, text and binary.  The text hints can be registered
 
 A custom TLD is formed by public blockname resolvers advertising their existence to each other via binary hints and building a distributed hashtable (DHT) index for the TLD from those advertisements. The DHT index is then used to dynamically resolve any names that did not have a hint in the blockchain, allowing for ephemeral and alternative uses on that TLD that do not require a transaction per name.
 
-## Hostname Hints `*`
+## Host Hints `*!`
 
-A hostname hint is a direct mapping of an exact hostname to an IP address, no additional queries are done and an answer is returned immediately to the query.  Any matching domain hints are authorative and checked first, hostname hints are only used when there is no domain hint.
+A host hint is a direct mapping of an exact hostname to an IP address, an answer is returned immediately to any query with the given IP.
 
-* Any OP_RETURN starting with `*` where the second byte is alphanumeric ([a-z] or [0-9])
-* followed by up to 31 valid domain name characters with any number of labels
+Any matching domain or TLD hints are authorative and checked first, hostname hints are only used when there is no other answer.
+
+* Any OP_RETURN starting with `*!`
+* followed by up to 30 valid domain name characters with any number of labels
 * followed by a required 8 characters of the IPv4 address in hex
 
 Examples:
 
-* `test.domain.tld` A `192.168.0.1` => hint `*test.domain.tldc0a80001`
-* `test.name` A `1.2.3.4` => hint `*test.name01020304`
-* `some.host.jeremie.com` A `208.68.163.251` => hint `*some.host.jeremie.comd044a3fb`
+* `test.domain.tld` A `192.168.0.1` => hint `*!test.domain.tldc0a80001`
+* `test.name` A `1.2.3.4` => hint `*!test.name01020304`
+* `some.host.jeremie.com` A `208.68.163.251` => hint `*!some.host.jeremie.comd044a3fb`
 
-## Name Server Hints `*.`
+## Domain Hints `*.`
 
-Textual Name-Server (NS) hints are used to match one or more given queries to an included IP and port.  Any DNS query including or matching the suffix/domain will be sent to the specified IP:port and any answers returned verbatim and cached.
+Domain hints are used to match one or more given queries to a name server IP and port.  Any DNS query including or matching the suffix/domain will be forwarded to the hint's IP:port and any answers returned verbatim and cached.
+
+A domain hint is only matched if there is no TLD answer.
 
 * any OP_RETURN starting with `*.`
-* followed by up to 26 valid [domain name](http://en.wikipedia.org/wiki/Domain_name) characters that must include at least two labels (name.tld)
+* followed by up to 26 valid [domain name](http://en.wikipedia.org/wiki/Domain_name) characters that must include two labels (name.tld)
 * followed by a required 8 characters that are always the IPv4 address octets hex encoded, this address is used as the dns server to forward the query to
 * followed by a required 4 characters that are the port of the DNS server in hex (network byte order uint16_t)
 
@@ -44,11 +48,15 @@ Examples:
 
 ## TLD Hints `*#`
 
-* `*!tld.hexprefix010203040506`
-* 2+TLD+BRANCH+8+4
-* branch is hex of what bucket, must match hashname at that ip+port
-* by default use as much as possible, only designated would elect shorter
-* tld caretakers must monitor for abuse
+A TLD hint will match any query with the given root label and send a query to the DHT for that label.  The hints contain the label characters followed by a `.` and one or more hex characters of the node's location in the DHT.
+
+TLDs are always checked first after there is no traditional DNS answer, before checking for any domain or hostname hints.
+
+* `*#tld.prefix010203040506`
+* prefix is hex of the "bucket", must match hashname at that ip+port
+* by default include as much hex as possible, only designated would elect shorter
+* TLD caretakers must monitor for abuse
+* resolvers must be customized to participate in a DHT (know how to answer queries)
 
 --------
 
