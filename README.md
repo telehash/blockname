@@ -48,70 +48,42 @@ Examples:
 
 ## TLD Hints `*#`
 
-A TLD hint will match any query with the given root label and send a query to the DHT for that label.  The hints contain the label characters followed by a `.` and one or more hex characters of the node's location in the DHT.
+A TLD hint will match any query with the given root label and send a query to the DHT for that label.  The hints start with a `*#` followed by the TLD label characters, then separated with a `.` from one or more hex characters of the node's location in the DHT and its IP:port.
 
-TLDs are always checked first after there is no traditional DNS answer, before checking for any domain or hostname hints.
+TLDs are always checked first after there is no traditional DNS answer, before checking for any domain or host hints. When creating a new blockname based TLD, care should be taken not to create conflicts with any [existing or proposed](http://en.wikipedia.org/wiki/List_of_Internet_top-level_domains) names.
 
-* `*#tld.prefix010203040506`
-* prefix is hex of the "bucket", must match hashname at that ip+port
+* `*#tld.dht010203040506`
+* DHT is the hex prefix of hashname at the IP:port
 * by default include as much hex as possible, only designated would elect shorter
-* TLD caretakers must monitor for abuse
-* resolvers must be customized to participate in a DHT (know how to answer queries)
+* TLD caretakers must monitor advertised hints for abuse
+* DHT participating resolvers must be customized to mesh (know how to answer queries)
 
---------
+All blockname resolvers will process TLD hints and attempt to keep a connection open to at least eight of the shortest DHT prefix hints for each unique TLD.  When any query comes in matching that TLD, the name will be hashed and sent to the closest two connected hashnames which will internally process/route the query and return an answer if any.
 
-> pardon the dust, in progress merging the stuff below here to generic TLD hints!
+A resolver that is helping maintain a TLD must process all of its matching hints, attempting to keep connections open to a minimum number of peers in each bucket closest to its own hashname. The DHT is always seeded only by peers with valid hints, and each bucket is prioritzed by the value of the hints in that bucket.
 
-## Hashname Hints `*#bytes`
-
-A [hashname](https://github.com/telehash/telehash.org/tree/master/v3/hashname) hint enables any [telehash](http://telehash.org) based service to associate itself publicly with a known stable network location.  They should only be used for services that are intended to be public (web servers, etc), private devices and ephemeral network addresses should not be published in the blockchain.
-
-* any OP_RETURN starting with `*#`
-* followed by 32 bytes of the hashname (binary)
-* followed by 4 bytes of the IPv4 address (binary)
-* followed by 2 bytes of the port (binary, network order uint16_t)
-
-The string encoding of a hashname (base32 of the 32 bytes) may be combined with the special `.public` TLD to enable regular DNS queries to resolve hashnames, for example `4w0fh69ad6d1xhncwwd1020tqnhqm4y5zbdmtqdk7d3v36qk6wbg.public`.
-
-All hashname lookups are verified against the given IP and port with a handshake to ensure authenticity before returning their information to any queries.
-
-## Bitcoin Address Hints (binary)
-
-Any bitcoin address that is a public key (starts with `1`) can be resolved and verified by blockname.
-
-* any OP_RETURN starting with `*#`
-* followed by 20 bytes of the public key (binary)
-* followed by 4 bytes of the IPv4 address (binary)
-* followed by 2 bytes of the port (binary, network order uint16_t)
-
-The given IP:port must be issued a verification challenge and return a signed message (format to be defined) before returning their information to any queries.
-
-While the base58 string encoding of a bitcoin address is regularly used and would be optimal for mapping to a special TLD, normal DNS is case-insensitive and some DNS tools may not support the case-sensitive base58 encoding.  In practice most DNS resolution libraries will just pass the queried hostname verbatim through to the resolver/server and the address will be preserved, so using a special TLD of `.address` often works when mapping from normal DNS.  When possible, the address may be converted from base58 to base32 before sending to a blockname resolver via DNS.
-
-## Generic Hash hints (binary)
-
-A blockname resolver will also support any generic hash160-based (RIPEMD-160 hashing on the result of SHA-256) queries where they do not understand how to verify the authenticity of the results.  Applications using this should be careful to have an independent mechanism to verify the results are valid when being used programmatically.
-
-* any OP_RETURN starting with `* ` (space character)
-* followed by 20 bytes of the hash160 value
-* followed by 4 bytes of the IPv4 address
-* followed by an optional 14 bytes of application payload
-
-When mapping incoming normal DNS queries to generic hash hints, the special `.hash` TLD is used with base32 of the 32 byte SHA-256 result.  This allows the source of the hash to not be known until query-time. When doing this mapping to normal DNS the blockname resolver can only return un-verified A records to the IP address.
-
-## DHT Hints (binary)
-
-A DHT hint is identical to the hashname hint but uses the `*!` prefix with the same 32-byte + 4-byte + 2-byte binary payload.  The hashnames in these hints are signalling that they are part of the blockname DHT that will provide a fallback resolution for ephemeral and non-published hints not included in a transaction/OP_RETURN.
-
-Every DHT hint is indexed by the blockname resolver as a hashtable structured to find the closest nodes based on the result of any SHA-256 hash.  Any incoming queries that have not been resolved via the blockchain index are forwarded to the closest three active nodes on the DHT via telehash, and any hints returned are processed like normal.
-
-Anyone may register these ephemeral hints to any of the DHT nodes by sending the hint via telehash (specifics to be defined).
-
-Even though the hints are not stored permanently on the blockchain, sharing them with un-trusted nodes on the DHT is still putting them in the public domain and there is no assurance of privacy.  They may be registered via systems like Tor and I2P, but the information in the hint itself (the name and mapped IP address) will still be public.
-
-Upon being cached from a verified DHT hint the local resolver must monitor new transactions for updates as long as the hint is cached.
+Participating resolvers may have custom internal query processing and routing logic per TLD, these customizations can only be validated by other peers in that TLD ensuring that the highest priority hints are behaving correctly.
 
 > WIP, merging [dotPublic](https://github.com/telehash/dotPublic) into here
+
+### Well-known blockname TLDs
+
+#### `.hashname`
+
+This TLD is dedicated to resolving [hashnames](https://github.com/telehash/telehash.org/tree/master/v3/hashname) for any [telehash](http://telehash.org) based service to associate itself publicly with a known stable network location.  They should only be used for services that are intended to be public (web servers, etc), private devices should never be published in an anonymous DHT.
+
+* `4w0fh69ad6d1xhncwwd1020tqnhqm4y5zbdmtqdk7d3v36qk6wbg.hashname`
+
+All hashname lookups are internally verified against the returned IP and port with a handshake to ensure authenticity before returning their information to any queries.
+
+#### `.btc`
+
+Any bitcoin address that is a public key (starts with `1`) can be resolved and verified under the `.btc` TLD.
+
+While the base58 string encoding of a bitcoin address is regularly used and would be optimal for mapping to a special TLD, normal DNS is case-insensitive and some DNS tools may not support the case-sensitive base58 encoding.  In practice most DNS resolution libraries will just pass the queried hostname verbatim through to the resolver/server and the address will be preserved, so using the base58check address often works when mapping from normal DNS.  When possible, the address may be converted from base58 to base32 before sending to a blockname resolver via DNS.
+
+* `16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM.btc`
+
 
 ## Status
 
