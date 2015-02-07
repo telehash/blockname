@@ -1,18 +1,32 @@
-# blockname - A blockchain and DHT backed DNS cache
+# blockname - A blockchain-backed DNS resolver
 
-This is a simple bitcoin and telehash based DNS cache, using the blockchain as a backup cache for normal DNS resolution as well as to resolve alternative domains and TLDs (completely distributed, no registrars), and a DHT secured with telehash for off-blockchain dynamic resolutions.
+This is a simple bitcoin and telehash based DNS resolver, using the blockchain as a backup cache for normal DNS resolution as well as to resolve alternative domains and custom DHT-based TLDs (completely distributed, no registrars or root servers).
 
-Simply publish your own domain name as a valid `OP_RETURN` output on *any* transaction with the text format `*myname.com11223344`, these are called `hint` transactions and the first byte is always the star character (`*`).
+Simply publish your own hostname as a valid `OP_RETURN` output on *any* transaction with the text format `*hostname.tld11223344` (string hostname and 8-char hex IP address), these are called `hint` transactions and the first byte is always the star character (`*`).
 
-The blockname resolver will attempt to resolve all domains with traditional DNS, and only when they fail will it use any names that come from the cache hints.
+The blockname resolver is a traditional DNS cache and recursive resolver and will attempt to resolve all queries via regular DNS first, and only when they fail will it use any names that come from the blockchain-based hints.  In this mode blockname will always act as a backup for any existing valid DNS names and only provides additional resolution for unregistered domains or unsupported TLDs.
 
 In the background the resolver will continuously index all newly broadcast transactions that have a valid hints, storing only the unique hints that have the largest value transactions.  Both the burned value of the hint output *and* the total sum values of all the outputs on the transaction must be larger for the new hint to replace a previous one of the same name.
 
-There are two forms of hints, text and binary.  The text hints can be registered with any wallet software that can include an `OP_RETURN` output on a transaction, and are the only hints that can act as a fallback/cache for *any* domain name.  The binary hints require additional rules for registration and resolution validation, and only work for as a fallback for normal DNS requests via custom TLDs.
+There are two forms of hints, text and binary.  The text hints can be registered with any wallet software that can include an `OP_RETURN` output on a transaction, and are the only hints that can act as a fallback/cache for *any* domain name.
 
-Public resolvers may also advertise their existence to each other via binary hints and build a distributed hashtable (DHT) index from those advertisements. The DHT index is then used to dynamically resolve any names that did not have a hint in the blockchain, allowing for ephemeral registrations that do not require a transaction.
+A custom TLD is formed by public blockname resolvers advertising their existence to each other via binary hints and building a distributed hashtable (DHT) index for the TLD from those advertisements. The DHT index is then used to dynamically resolve any names that did not have a hint in the blockchain, allowing for ephemeral and alternative uses on that TLD that do not require a transaction per name.
 
-## Name Server Hints (text)
+## Hostname Hints `*`
+
+A hostname hint is a direct mapping of an exact hostname to an IP address, no additional queries are done and an answer is returned immediately to the query.  Any matching domain hints are authorative and checked first, hostname hints are only used when there is no domain hint.
+
+* Any OP_RETURN starting with `*` where the second byte is alphanumeric ([a-z] or [0-9])
+* followed by up to 31 valid domain name characters with any number of labels
+* followed by a required 8 characters of the IPv4 address in hex
+
+Examples:
+
+* `test.domain.tld` A `192.168.0.1` => hint `*test.domain.tldc0a80001`
+* `test.name` A `1.2.3.4` => hint `*test.name01020304`
+* `some.host.jeremie.com` A `208.68.163.251` => hint `*some.host.jeremie.comd044a3fb`
+
+## Name Server Hints `*.`
 
 Textual Name-Server (NS) hints are used to match one or more given queries to an included IP and port.  Any DNS query including or matching the suffix/domain will be sent to the specified IP:port and any answers returned verbatim and cached.
 
@@ -28,21 +42,19 @@ Examples:
 * `jeremie.com` NS `208.68.163.251:53` => hint `*.jeremie.comd044a3fb0035`
 
 
-## Hostname Hints (text)
+## TLD Hints `*#`
 
-A hostname hint is a direct mapping of an exact hostname to an IP address, no additional queries are done and an answer is returned immediately to the query.  Any matching domain hints are authorative and checked first, hostname hints are only used when there is no domain hint.
+* `*!tld.hexprefix010203040506`
+* 2+TLD+BRANCH+8+4
+* branch is hex of what bucket, must match hashname at that ip+port
+* by default use as much as possible, only designated would elect shorter
+* tld caretakers must monitor for abuse
 
-* Any OP_RETURN starting with `*` where the second byte is alphanumeric ([a-z] or [0-9])
-* followed by up to 30 valid domain name characters with any number of labels
-* followed by a required 8 characters of the IPv4 address in hex
+--------
 
-Examples:
+> pardon the dust, in progress merging the stuff below here to generic TLD hints!
 
-* `test.domain.tld` A `192.168.0.1` => hint `*test.domain.tldc0a80001`
-* `test.name` A `1.2.3.4` => hint `*test.name01020304`
-* `some.host.jeremie.com` A `208.68.163.251` => hint `*some.host.jeremie.comd044a3fb`
-
-## Hashname Hints (binary)
+## Hashname Hints `*#bytes`
 
 A [hashname](https://github.com/telehash/telehash.org/tree/master/v3/hashname) hint enables any [telehash](http://telehash.org) based service to associate itself publicly with a known stable network location.  They should only be used for services that are intended to be public (web servers, etc), private devices and ephemeral network addresses should not be published in the blockchain.
 
