@@ -54,6 +54,8 @@ After some more testing and docs, this will default to mainnet and become a `blo
 
 There will be a list of public blockname resolvers that can be used by anyone and a web-based registration tool and a chart of top hints in the blockchain.
 
+Explore using types of secondary "confirmation" hints to enable self-forming distributed organizations a way to help reduce potential abuse of the simple value based priority?
+
 # Hint Types
 
 ## Host Hints `*!`
