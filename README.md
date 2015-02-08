@@ -1,16 +1,60 @@
 # blockname - A blockchain-backed DNS resolver
 
-This is a simple bitcoin and telehash based DNS resolver, using the blockchain as a backup cache for normal DNS resolution as well as to resolve alternative domains and custom DHT-based TLDs (completely distributed, no registrars or root servers).
+This is a simple bitcoin and telehash based DNS resolver, using the blockchain as a backup cache for normal DNS resolution as well as to resolve alternative domains and custom DHT-based TLDs (completely distributed, no registrars, root servers, or central authorities).
 
-Simply publish your own hostname as a valid `OP_RETURN` output on *any* transaction with the text format `*hostname.tld11223344` (string hostname and 8-char hex IP address), these are called `hint` transactions and the first byte is always the star character (`*`).
+Simply publish your own hostname as a valid `OP_RETURN` output on *any* transaction with the text format `*!host.name.com11223344` (valid lower case text hostname followed by a fixed 8-char hex IP address), these are called `hint` transactions and the first byte is always the star character (`*`). The hints can be registered with any bitcoin wallet software that can include an `OP_RETURN` output on a transaction.
 
-The blockname resolver is a traditional DNS cache and recursive resolver and will attempt to resolve all queries via regular DNS first, and only when they fail will it use any names that come from the blockchain-based hints.  In this mode blockname will always act as a backup for any existing valid DNS names and only provides additional resolution for unregistered domains or unsupported TLDs.
+The blockname resolver is a traditional DNS cache and recursive resolver, it will attempt to resolve all queries via regular DNS first and only when they fail will it use any names that come from the blockchain-based hints.  In this mode blockname will always act as a backup for any existing valid DNS names and only provides additional resolution for unregistered domains or unsupported TLDs.
 
-In the background the resolver will continuously index all newly broadcast transactions that have a valid hints, storing only the unique hints that have the largest value transactions.  Both the burned value of the hint output *and* the total sum values of all the outputs on the transaction must be larger for the new hint to replace a previous one of the same name.
+In the background the resolver will continuously index all newly broadcast transactions that have a valid hints (any `OP_RETURN` starting with a `*`), storing only the unique hints that have the largest values associated with them.  The value of the hint's own output (the "burned" value in satoshis) must be larger for the new hint to replace a previous one of the same name.
 
-There are two forms of hints, text and binary.  The text hints can be registered with any wallet software that can include an `OP_RETURN` output on a transaction, and are the only hints that can act as a fallback/cache for *any* domain name.
+A custom TLD is formed by designated public blockname resolvers advertising their existence to each other and building a distributed hashtable (DHT) index for a TLD from those advertisements. The DHT index is then used to dynamically resolve any names with that TLD, allowing for ephemeral and alternative uses on a custom TLD that do not require a transaction per name or traditional DNS registration.
 
-A custom TLD is formed by public blockname resolvers advertising their existence to each other via binary hints and building a distributed hashtable (DHT) index for the TLD from those advertisements. The DHT index is then used to dynamically resolve any names that did not have a hint in the blockchain, allowing for ephemeral and alternative uses on that TLD that do not require a transaction per name.
+## Status
+
+This project is at an early stage of development yet and actively evolving.
+
+It is [currently working](http://testnet.coinsecrets.org/?to=321916.000001) on testnet ([domain hint](http://blockexplorer.com/testnet/tx/e38b50187a202bf1042518aaaa3704d53665cbd44cc6732ffe6018327f9d1cb2) and [host hint](http://blockexplorer.com/testnet/tx/049a2873f207c466f68fd94c8edbac58571979b1fbde4cb7607659ba9ccaeb13)), and being tested/developed for the main blockchain.
+
+These commands are working but expect them to change:
+
+```
+git clone https://github.com/quartzjer/blockname.git
+cd blockname
+npm install
+```
+
+Start a local DNS resolver (defaults to port `8053`)
+
+```
+node bin/serve.js
+```
+
+Start a process to sync and monitor the transactions on the (testnet) blockchain:
+
+```
+node bin/scan.js
+```
+
+Register your own hint on the blockchain, passing the hostname and an IP to resolve any `A` queries, or a domain and IP:port of a nameserver that will resolve that whole domain.  Uses a testnet faucet service by default currently, may also pass an existing source transaction and destination address to refund to (run command w/ no args to see options)
+
+```
+node bin/register.js "somename.tld" 12.34.56.78
+```
+
+Now do a test resolution to the local cache server, it will check normal DNS first, then fallback to any indexed hints from the blockchain:
+
+```
+dig somename.tld @127.0.0.1 -p 8053
+```
+
+## Plans
+
+After some more testing and docs, this will default to mainnet and become a `blocknamed` DNS resolver service and `blockname` registration command that anyone can `npm install -g blockname`.
+
+There will be a list of public blockname resolvers that can be used by anyone and a web-based registration tool and a chart of top hints in the blockchain.
+
+# Hint Types
 
 ## Host Hints `*!`
 
@@ -84,48 +128,9 @@ While the base58 string encoding of a bitcoin address is regularly used and woul
 
 * `16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM.btc`
 
+#### Others
 
-## Status
-
-It is [currently working](http://testnet.coinsecrets.org/?to=321916.000001) on testnet ([NS hint](http://blockexplorer.com/testnet/tx/e38b50187a202bf1042518aaaa3704d53665cbd44cc6732ffe6018327f9d1cb2) and [hostname hint](http://blockexplorer.com/testnet/tx/049a2873f207c466f68fd94c8edbac58571979b1fbde4cb7607659ba9ccaeb13)), and being tested/developed for the main blockchain.
-
-These commands are working but expect them to change:
-
-```
-git clone https://github.com/quartzjer/blockname.git
-cd blockname
-npm install
-```
-
-Start a local DNS resolver (defaults to port `8053`)
-
-```
-node bin/serve.js
-```
-
-Start a process to sync and monitor the transactions on the (testnet) blockchain:
-
-```
-node bin/scan.js
-```
-
-Register your own hint on the blockchain, passing the hostname and an IP to resolve any `A` queries, or a domain and IP:port of a nameserver that will resolve that whole domain.  Uses a testnet faucet service by default currently, may also pass an existing source transaction and destination address to refund to (run command w/ no args to see options)
-
-```
-node bin/register.js "somename.tld" 12.34.56.78
-```
-
-Now do a test resolution to the local cache server, it will check normal DNS first, then fallback to any indexed hints from the blockchain:
-
-```
-dig somename.tld @127.0.0.1 -p 8053
-```
-
-## Plans
-
-After some more testing and docs, this will default to mainnet and become a `blocknamed` DNS resolver service and `blockname` registration command that anyone can `npm install -g blockname`.
-
-After some more usage there will be a list of public blockname resolvers that can be used by anyone and a web-based registration tool and a chart of top hints in the blockchain.
+> TODO: decide/document on support for .onion, .bit, etc alternative TLDs, write a guide for creating a new custom TLD
 
 ## Thanks
 
