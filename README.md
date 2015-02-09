@@ -14,7 +14,7 @@ A custom TLD is formed by designated public blockname resolvers advertising thei
 
 This project is at an early stage of development yet and actively evolving.
 
-It is [currently working](http://testnet.coinsecrets.org/?to=321916.000001) on testnet ([domain hint](http://blockexplorer.com/testnet/tx/e38b50187a202bf1042518aaaa3704d53665cbd44cc6732ffe6018327f9d1cb2) and [host hint](http://blockexplorer.com/testnet/tx/049a2873f207c466f68fd94c8edbac58571979b1fbde4cb7607659ba9ccaeb13)), and being tested/developed for the main blockchain.
+It is [currently working](http://testnet.coinsecrets.org/?to=322562.000001) on testnet ([domain hint](https://www.blocktrail.com/tBTC/tx/d1bb941d7efc1fc33920a9ac48dc1e46bd1be0ebaadb29768d28aeda1736c1a3) and [host hint](https://www.blocktrail.com/tBTC/tx/3cf995487dacff844ff3c000f1d57032731e8aa6d5fb2de98b90ee14c60197b9)), and being tested/developed for the [main blockchain](https://www.blocktrail.com/BTC/tx/756f0a79e7c939e4f703f710fd09e26303021fa3aa0fa2324a5cd85ebfb1983d#tx_messages).
 
 These commands are working but expect them to change:
 

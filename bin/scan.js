@@ -7,7 +7,7 @@ var argv = require('yargs')
 
 // start from a default recent block on the right network
 var id = argv.block;
-if(!id) id = argv.test?321916:340853;
+if(!id) id = argv.test?322560:342656;
 var network = argv.test?'testnet':'mainnet';
 var dbdir = argv.db || (__dirname + '/db');
 
