@@ -15,20 +15,11 @@ var db = level(dbdir, { encoding: 'json' });
 
 console.log('resolving dns requests at',argv.port,'with hints from',dbdir);
 
-// check for suffix match first (recursion)
-function getNS(name, cbHint)
+// check for domain match first
+function getDomain(domain, cbHint)
 {
-  var dot = name.indexOf('.');
-  // hit bottom
-  if(dot < 0) return cbHint(false);
-  // descend down suffixes first
-  getNS(name.substr(dot+1), function(err, hint){
-    // found a lower level suffix hint already
-    if(hint) return cbHint(false, hint);
-    // go find a NS hint (with port) for the current name
-    db.get(name, function(err, hint){
-      cbHint(err, hint && hint.port);
-    });
+  db.get('.'+domain, function(err, hint){
+    cbHint(err, hint && hint.port);
   });
 }
 
@@ -37,13 +28,15 @@ function getHint(name, cbHint)
 {
   // paranoid sanity
   name = name.toLowerCase();
-  if(name.substr(name.length-1) == '.') name = name.substr(0,name.length-1)
+  if(name.substr(name.length-1) == '.') name = name.substr(0,name.length-1);
 
-  // first try to get any NS matching one
-  getNS(name, function(err, hint){
+  // first try to get any domain matching one
+  var labels = name.split('.');
+  var domain = labels.join(labels.slice(labels.length-2),'.');
+  getDomain(domain, function(err, hint){
     if(hint) return cbHint(false, hint);
     
-    // fallback get any exact match
+    // fallback get any host match
     db.get(name, cbHint);
   });
   
@@ -73,27 +66,27 @@ server.on('request', function (request, response) {
   });
 
   req.on('end', function () {
-    if(ok) return console.log('ok',q.name);
+    if(ok) return console.log('ok\t',q.name);
 
     // now check for a hint to use as the nameserver
     getHint(q.name, function(err, hint){
       if(err || !hint || !hint.ip)
       {
-        console.log('xx',q.name);
+        console.log('n/a\t',q.name);
         return response.send();
       }
 
       
-      // any direct hints don't have a port
+      // any host hints don't have a port
       if(!hint.port)
       {
-        console.log('hn',q.name,hint);
+        console.log('host\t',q.name,hint);
         response.answer.push(dns.A({name: q.name, address: hint.ip, ttl: 60}));
         response.send();
         return;
       }
 
-      console.log('ns',q.name,hint);
+      console.log('domain\t',q.name,hint);
       var req = dns.Request({
         question: q,
         server: { address: hint.ip, port: hint.port, type: 'udp' },

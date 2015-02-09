@@ -77,10 +77,11 @@ function getBlock()
 
         var type = opreturn[1];
         
-        // second character '.' is nameserver hint ip+port
+        // second character '.' is domain hint ip+port
         if(type == 46)
         {
-          var domain = opreturn.slice(2,opreturn.length-12).toString();
+          // include the . in the name for the cache
+          var domain = opreturn.slice(1,opreturn.length-12).toString();
           var iphex = opreturn.slice(opreturn.length-12, opreturn.length-4).toString();
           var ipbuf = new Buffer(iphex,'hex');
           if(ipbuf.length != 4) return console.log('invalid ip hex');
