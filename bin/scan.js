@@ -38,6 +38,8 @@ console.log('starting to scan for hints from',network,'at block',id,'into',dbdir
 
 function setHint(name, hint)
 {
+  console.log('checking hint',name);
+
   db.get(name, function(err, existing){
     if(existing)
     {
@@ -67,12 +69,13 @@ function getBlock()
       opret.scan(tx, function(err, dtx) {
         if(!dtx || !dtx.data) return;
         var opreturn = dtx.data;
+        // TODO, mod opret to return the source output, temporarily use total value
+        var value = tx.totalOutputsValue;
         
         // first character '*'
         if(opreturn.length < 10 || opreturn[0] != 42) return;
 
         var type = opreturn[1];
-        console.log('found possible hint',type,opreturn.slice(2).toString('hex'));
         
         // second character '.' is nameserver hint ip+port
         if(type == 46)
@@ -88,22 +91,24 @@ function getBlock()
           var port = portbuf.readUInt16BE(0);
           if(!port) return console.log('invalid port 0');
           
-          var hint = {ip:server, port:port, v:tx.totalOutputsValue};
+          var hint = {ip:server, port:port, v:value};
           return setHint(domain, hint);
         }
         
-        // second character alpha is hostname hint, ip only
-        if((type > 96 && type < 123))
+        // second character is a '!' hostname hint, ip only
+        if(type == 33)
         {
-          var host = opreturn.slice(1,opreturn.length-8).toString();
+          var host = opreturn.slice(2,opreturn.length-8).toString();
           var iphex = opreturn.slice(opreturn.length-8).toString();
           var ipbuf = new Buffer(iphex,'hex');
           if(ipbuf.length != 4) return console.log('invalid ip hex');
           var server = ip.toString(ipbuf);
           
-          var hint = {ip:server, v:tx.totalOutputsValue};
+          var hint = {ip:server, v:value};
           return setHint(host, hint);
         }
+
+        console.log('found unknown hint',type,opreturn.slice(2).toString('hex'));
 
       });
     })

@@ -24,10 +24,10 @@ if(ipp.length > 1)
   ns.writeUInt16BE(port,0);
   var hint = '*.'+domain+server.toString('hex')+ns.toString('hex');
 }else{
-  var hint = '*'+domain+server.toString('hex');
+  var hint = '*!'+domain+server.toString('hex');
 }
 
-if(hint.length > 40) return console.error('hint too large, domain must be <32 chars:',hint);
+if(hint.length > 40) return console.error('hint too large, name must be <32 chars:',hint);
 
 var network = argv.test?'testnet':'mainnet';
 var key = argv.key ? bitcoin.ECKey.fromWIF(argv.key) : bitcoin.ECKey.makeRandom();
