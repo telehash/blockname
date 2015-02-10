@@ -7,7 +7,7 @@ var yargs = require('yargs')
   .describe('db','hint storage db directory')
   .describe('key','WIF format secret key to use for the registration transaction')
   .boolean('test').describe('test','use a testnet faucet to fund the registration').default('test',true)
-  .usage('Usage: $0 "domain" 1.2.3.4:5678 [txid] [refundto]')
+  .usage('Usage: $0 "domain" 1.2.3.4:5678 [satoshis] [refundto]')
   .demand(2);
 var argv = yargs.argv;
 
@@ -29,55 +29,59 @@ if(ipp.length > 1)
 
 if(hint.length > 40) return console.error('hint too large, name must be <32 chars:',hint);
 
-var network = argv.test?'testnet':'mainnet';
+var network = argv.test?bitcoin.networks.testnet:bitcoin.networks.bitcoin;
 var key = argv.key ? bitcoin.ECKey.fromWIF(argv.key) : bitcoin.ECKey.makeRandom();
-var address = key.pub.getAddress(bitcoin.networks[network]).toString();
+var address = key.pub.getAddress(network).toString();
 var dbdir = argv.db || (__dirname + '/db');
 var db = level(dbdir, { encoding: 'json' });
-var helloblock = require('helloblock-js')({network:network});
+var helloblock = require('helloblock-js')({network:argv.test?'testnet':'mainnet'});
 
-console.log('using key (WIF)',key.toWIF(),argv.test);
-console.log('temporary address',address);
+// optional value to spend on registration
+var value = parseInt(argv._[2]) || 1000;
+var refund = argv._[3] || address;
+
+console.log('using private key (WIF)',key.toWIF(),argv.test);
+console.log('public address requiring funds',address);
 console.log('registering hint `%s` to %s (OP_RETURN `%s`)', domain, ip.toString(server), hint);
+console.log('spending %d and sending balance to %s',value,refund);
 
-// test mode, we use a faucet to get funds
+
+// test mode, we use a faucet to get funds first
 if(argv.test)
 {
   helloblock.faucet.withdraw(address, 10000, function(err, res, ret) {
     if(err) return console.error('faucet withdrawl failed',err);
-    helloblock.transactions.get(ret.txHash, function(err, res, tx) {
-      if(err) return console.error('fetching transaction failed',err);
-      register(key,address,tx,hint);
-    });
+    unspent();
   });
   
-  return;
+}else{
+  // live mode, start looking for unspents
+  unspent();
 }
 
-// live mode, require a source tx and refund address
-if(argv._.length != 4)
-{
-  yargs.showHelp()
-  process.exit(1);
-}
+
+// loop until we find enough unspents for the given address
+function unspent(){
+  helloblock.addresses.getUnspents(address, function(err, res, unspents) {
+    if(err) return console.error('fetching unspent failed',err);
+    var total = 0;
+    unspents.forEach(function(utx){
+      total += utx.value;
+    });
+    if(total < value)
+    {
+      console.log('not enough funds found yet, waiting...',total,value);
+      return setTimeout(unspent,10*1000);
+    }
+    register(key,refund,unspents,hint);
+  });
   
-helloblock.transactions.get(argv._[2], function(err, res, tx) {
-  if(err) return console.error('fetching transaction failed',err);
-  register(key,argv._[3],tx,hint);
-});
+}
 
 
 // actually do the registration transaction
-function register(from, to, source, hint){
-
-  // find the matching unspent output in the transaction
-  var unspent = false;
-  var match = from.pub.getAddress(bitcoin.networks[network]).toString();
-  source.outputs.forEach(function(output){
-    if(output.address == match) unspent = output;
-  });
-  if(!unspent) return console.error('no matching outputs found in transaction');
-  unspent.txHash = source.txHash;
+function register(from, to, sources, hint){
+  console.log('performing registration');
 
   var signTransaction = function(tx, callback) {
     tx.sign(0, from); 
@@ -94,7 +98,8 @@ function register(from, to, source, hint){
   opret.post({
     stringData: hint,
     address: to,
-    unspentOutputs: [unspent],
+    fee: network.estimateFee,
+    unspentOutputs: sources,
     propagateTransaction: propagateTransaction,
     signTransaction: signTransaction
   }, function(error, postedTx) {
