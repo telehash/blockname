@@ -44,7 +44,7 @@ function setHint(name, hint)
     if(existing)
     {
       if(hint.ip == existing.ip && hint.v == existing.v) return; // ignore duplicate
-      if(hint.v < existing.v) return console.log('existing better hint',domain,existing);
+      if(hint.v < existing.v) return console.log('existing better hint',name,existing);
     }
     console.log('saving new hint', name, hint);
     db.put(name, hint);
@@ -69,8 +69,7 @@ function getBlock()
       opret.scan(tx, function(err, dtx) {
         if(!dtx || !dtx.data) return;
         var opreturn = dtx.data;
-        // TODO, mod opret to return the source output, temporarily use total value
-        var value = tx.totalOutputsValue;
+        var value = dtx.output.value;
         
         // first character '*'
         if(opreturn.length < 10 || opreturn[0] != 42) return;
