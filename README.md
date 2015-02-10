@@ -14,7 +14,7 @@ A custom TLD is formed by designated public blockname resolvers advertising thei
 
 This project is at an early stage of development yet and actively evolving.
 
-It is [currently working](http://testnet.coinsecrets.org/?to=322562.000001) on testnet ([domain hint](https://www.blocktrail.com/tBTC/tx/d1bb941d7efc1fc33920a9ac48dc1e46bd1be0ebaadb29768d28aeda1736c1a3) and [host hint](https://www.blocktrail.com/tBTC/tx/3cf995487dacff844ff3c000f1d57032731e8aa6d5fb2de98b90ee14c60197b9)), and being tested/developed for the [main blockchain](https://www.blocktrail.com/BTC/tx/756f0a79e7c939e4f703f710fd09e26303021fa3aa0fa2324a5cd85ebfb1983d#tx_messages).
+It is [currently working](http://testnet.coinsecrets.org/?to=322562.000001) on testnet ([domain hint](https://www.blocktrail.com/tBTC/tx/d1bb941d7efc1fc33920a9ac48dc1e46bd1be0ebaadb29768d28aeda1736c1a3) and [host hint](https://www.blocktrail.com/tBTC/tx/3cf995487dacff844ff3c000f1d57032731e8aa6d5fb2de98b90ee14c60197b9)), and being tested/developed for the [main blockchain](https://www.blocktrail.com/BTC/tx/823d02d2689bdb1430faddc4a6c57fc0b7be23e1e56ee686c92f300d67e51390#tx_messages).
 
 These commands are working but expect them to change:
 
@@ -36,7 +36,7 @@ Start a process to sync and monitor the transactions on the (testnet) blockchain
 node bin/scan.js
 ```
 
-Register your own hint on the blockchain, passing the hostname and an IP to resolve any `A` queries, or a domain and IP:port of a nameserver that will resolve that whole domain.  Uses a testnet faucet service by default currently, may also pass an existing source transaction and destination address to refund to (run command w/ no args to see options)
+Register your own hint on the blockchain, passing the hostname and an IP to resolve any `A` queries, or a domain and IP:port of a nameserver that will resolve that whole domain.  Uses a testnet faucet service by default currently, will generate a temporary address to send funds to (run command w/ no args to see options)
 
 ```
 node bin/register.js "somename.tld" 12.34.56.78
