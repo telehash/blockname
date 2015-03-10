@@ -92,6 +92,16 @@ Examples:
 * `jeremie.com` NS `208.68.163.251:53` => hint `*.jeremie.comd044a3fb0035`
 
 
+## Name Authority Hints `*+`
+
+> work-in-progress, very rough draft
+
+* Any OP_RETURN starting with `*+`
+* followed by 32 hex characters, representing a 16 byte value
+* is the root of a NA, half of a sha-256 digest of a sequence
+* subsequent binary OP_RETURNS have sequence# and 16 bytes of previous, and 16 of a txid
+* contains add, update, and revoke
+
 ## TLD Hints `*#`
 
 A TLD hint will match any query with the given root label and send a query to the DHT for that label.  The hints start with a `*#` followed by the TLD label characters, then separated with a `.` from one or more hex characters of the node's location in the DHT and its IP:port.
