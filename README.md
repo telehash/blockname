@@ -96,11 +96,22 @@ Examples:
 
 > work-in-progress, very rough draft
 
+Form an `OP_RETURN Chain` by pre-calculating a large number of sequential SHA-256 hashes, the final one is the "root" of the chain.
+
+A Name Authority starts with a 16-byte root ID and broadcast in a TX:
+
 * Any OP_RETURN starting with `*+`
-* followed by 32 hex characters, representing a 16 byte value
-* is the root of a NA, half of a sha-256 digest of a sequence
-* subsequent binary OP_RETURNS have sequence# and 16 bytes of previous, and 16 of a txid
-* contains add, update, and revoke
+* followed by 32 hex characters, representing the 16 byte root value
+
+Subsequent binary OP_RETURNS are checked for matching chain digests:
+
+* 16 bytes of digest at seq, 16 of a txid, 4 byte sequence#
+* 4 byte SipHash digest output of previous 36 byte input
+* use 16 bytes of the digest of the last using second half of digest at seq as the key
+
+Links in the sequence can only be validated in order, the last one is always dangling.
+
+Positive values output to the OP_RETURN are an assertion, 0 values are a revocation.
 
 ## TLD Hints `*#`
 
