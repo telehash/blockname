@@ -96,12 +96,17 @@ Examples:
 
 > work-in-progress, very rough draft
 
-Form an `OP_RETURN Chain` by pre-calculating a large number of sequential SHA-256 hashes, the final one is the "root" of the chain.
-
-A Name Authority starts with a 16-byte root ID and broadcast in a TX:
+A Name Authority is broadcast in a TX:
 
 * Any OP_RETURN starting with `*+`
-* followed by 32 hex characters, representing the 16 byte root value
+* followed by the hostname of the NA
+* followed by 8 hex characters, the SipHash digest output of a new Notary Base
+
+The NA then notarizes this TX with the base.
+
+> TODO, move this technique to a simple standalone "transaction notary" spec
+
+Form an `OP_RETURN Chain` by pre-calculating a large number of sequential SHA-256 hashes, the final one is the "root" of the chain.
 
 Subsequent binary OP_RETURNS are checked for matching chain digests:
 
