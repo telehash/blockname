@@ -100,23 +100,9 @@ A Name Authority is broadcast in a TX:
 
 * Any OP_RETURN starting with `*+`
 * followed by the hostname of the NA
-* followed by 8 hex characters, the SipHash digest output of a new Notary Base
+* followed by 8 hex characters, the new [Notary ID](notary.md)
 
-The NA then notarizes this TX with the base.
-
-> TODO, move this technique to a simple standalone "transaction notary" spec
-
-Form an `OP_RETURN Chain` by pre-calculating a large number of sequential SHA-256 hashes, the final one is the "root" of the chain.
-
-Subsequent binary OP_RETURNS are checked for matching chain digests:
-
-* 16 bytes of digest at seq, 16 of a txid, 4 byte sequence#
-* 4 byte SipHash digest output of previous 36 byte input
-* use 16 bytes of the digest of the last using second half of digest at seq as the key
-
-Links in the sequence can only be validated in order, the last one is always dangling.
-
-Positive values output to the OP_RETURN are an assertion, 0 values are a revocation.
+The NA then also Stamps this transaction, which must be published/verified out of band by the hostname (via TLS, DNS-SEC, or NA-chaining).  Once the NA hint Stamp is verified, any subsequent Stamps are trusted from this NA.
 
 ## TLD Hints `*#`
 
