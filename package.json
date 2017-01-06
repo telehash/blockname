@@ -29,7 +29,7 @@
     "bitcoinjs-lib": "^1.2.0",
     "helloblock-js": "^0.2.5",
     "ip": "^0.3.2",
-    "level-party": "^1.0.1",
+    "level-party": "^3.0.4",
     "native-dns": "^0.7.0",
     "raw-op-return": "git+https://github.com/quartzjer/raw-op-return.git",
     "yargs": "^1.3.3"
